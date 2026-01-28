@@ -1,0 +1,19 @@
+# Scenario: Modified Replenishment Policy
+# Test impact of changing battery stocking and replenishment parameters
+
+name: "Aggressive Replenishment Strategy"
+description: "Increase replenishment threshold to 30% and amount to 15 batteries to reduce stockouts"
+
+# No station changes
+add_stations: []
+remove_station_ids: []
+modify_stations: {}
+
+# No demand changes
+demand_multiplier: null
+
+# Modify replenishment policy
+operations_override:
+  replenishment_threshold: 0.3    # Trigger earlier (30% instead of 20%)
+  replenishment_amount: 15        # Replenish more batteries (15 instead of 10)
+  replenishment_delay: 25.0       # Slightly faster delivery (25 min instead of 30)

@@ -1,0 +1,17 @@
+# Scenario: Weather Event / Monsoon Surge
+# Simulate increased demand during heavy rain when more riders use battery swaps
+
+name: "Monsoon Weather Event"
+description: "2x demand surge during heavy rain period + slower swap operations"
+
+# No station changes
+add_stations: []
+remove_station_ids: []
+modify_stations: {}
+
+# Double demand during weather event
+demand_multiplier: 2.0
+
+# Slightly longer swap times due to weather conditions
+operations_override:
+  swap_duration: 2.5  # 2.5 minutes instead of 2.0 (25% slower due to rain)

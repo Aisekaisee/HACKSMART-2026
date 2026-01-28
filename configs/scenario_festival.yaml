@@ -1,0 +1,16 @@
+# Scenario: Festival Period
+# Increased demand due to festive season (e.g., Diwali, Holi)
+
+name: "Festival Demand Surge"
+description: "1.5x demand multiplier during festival period with extended peak hours"
+
+# No station additions or removals
+add_stations: []
+remove_station_ids: []
+modify_stations: {}
+
+# Apply 50% demand increase
+demand_multiplier: 1.5
+
+# No operational changes
+operations_override: {}

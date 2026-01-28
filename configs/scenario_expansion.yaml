@@ -1,0 +1,44 @@
+# Scenario: Network Expansion
+# Add 2 new stations and upgrade chargers at high-tier stations
+
+name: "Network Expansion"
+description: "Add 2 new medium-tier stations and increase chargers at existing high-tier stations"
+
+# Add new stations
+add_stations:
+  - station_id: "KKN_05"
+    tier: "medium"
+    bays: 3
+    chargers: 4
+    inventory_capacity: 30
+    lat: 28.68
+    lon: 77.18
+    initial_charged: 25
+  
+  - station_id: "SDA_06"
+    tier: "medium"
+    bays: 2
+    chargers: 3
+    inventory_capacity: 25
+    lat: 28.61
+    lon: 77.24
+    initial_charged: 20
+
+# No removals
+remove_station_ids: []
+
+# Upgrade existing high-tier stations
+modify_stations:
+  WDL_01:
+    chargers: 8        # Increase from 6 to 8
+    inventory_capacity: 45  # Increase from 40 to 45
+  
+  CNP_02:
+    chargers: 7        # Increase from 5 to 7
+    inventory_capacity: 40  # Increase from 35 to 40
+
+# No demand changes
+demand_multiplier: null
+
+# No operational changes
+operations_override: {}
