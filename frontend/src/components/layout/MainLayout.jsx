@@ -36,7 +36,7 @@ const MainLayout = ({ leftPanel, mapPanel, rightPanel, bottomPanel }) => {
           <h2 className="text-xs font-bold text-text-main uppercase tracking-widest">Simulation Intelligence</h2>
           <span className="text-[10px] text-text-muted font-mono">LIVE MODEL CONNECTED</span>
         </div>
-        <div className="flex-1 p-4 overflow-hidden">
+        <div className="flex-1 p-4 pt-0 overflow-hidden">
           {bottomPanel}
         </div>
       </div>

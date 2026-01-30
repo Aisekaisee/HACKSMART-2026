@@ -26,5 +26,6 @@ export const api = {
     // Let's assume the hook handles fetching the baseline config.
     const baseline = await api.getBaseline(baselineName);
     return (await client.post('/simulation/compare', { baseline, scenario: scenarioConfig })).data;
-  }
+  },
+  optimize: async (baselineConfig) => (await client.post('/simulation/optimize', baselineConfig)).data
 };

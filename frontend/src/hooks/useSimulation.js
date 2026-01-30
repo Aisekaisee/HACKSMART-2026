@@ -116,6 +116,65 @@ export const useSimulation = () => {
       }));
   };
 
+  // Optimization State
+  const [suggestions, setSuggestions] = useState([]);
+  const [isOptimizing, setIsOptimizing] = useState(false);
+
+  const optimizeNetwork = async () => {
+    if (!baselineConfig) return;
+    setIsOptimizing(true);
+    try {
+        const res = await api.optimize(baselineConfig);
+        setSuggestions(res.suggestions);
+    } catch (err) {
+        console.error(err);
+        setError("Optimization failed");
+    } finally {
+        setIsOptimizing(false);
+    }
+  };
+
+  const applySuggestion = (suggestion) => {
+      // Logic to convert suggestion action_payload to scenario update
+      if (!suggestion.action_payload) return;
+      
+      const payload = suggestion.action_payload;
+      const { type } = suggestion;
+      
+      if (type === 'add_chargers' && payload.station_id) {
+          // Check if station already modified in scenarioConfig.modify_stations
+          const currentMods = scenarioConfig.modify_stations[payload.station_id] || {};
+          // We need to know current chargers to Add... but the API payload says "add_chargers: 2"
+          // We need baseline station reference to know absolute value? 
+          // Or the backend should support relative changes. 
+          // Our ScenarioConfig `modify_stations` usually expects absolute values (see backend schema).
+          // Wait, the backend schema is Dict[str, Dict[str, Any]]. It replaces values.
+          
+          // Helper: Find current chargers from baseline OR current scenario state
+          // For MVP: Let's assume we read from baseline for now.
+          const baseStation = baselineConfig.stations.find(s => s.station_id === payload.station_id);
+          if (baseStation) {
+              const currentChargers = baseStation.chargers;
+              const newChargers = currentChargers + payload.add_chargers;
+              
+              setScenarioConfig(prev => ({
+                  ...prev,
+                  modify_stations: {
+                      ...prev.modify_stations,
+                      [payload.station_id]: { ...currentMods, chargers: newChargers }
+                  }
+              }));
+          }
+      }
+      
+      // Remove suggestion from list after applied?
+      setSuggestions(prev => prev.filter(s => s !== suggestion));
+  };
+  
+  const autoFixAll = () => {
+      suggestions.forEach(s => applySuggestion(s));
+  };
+
   return {
     baselines,
     selectedBaselineName,
@@ -128,6 +187,12 @@ export const useSimulation = () => {
     error,
     runSimulation,
     selectedStationId,
-    setSelectedStationId
+    setSelectedStationId,
+    // Optimization
+    optimizeNetwork,
+    suggestions,
+    isOptimizing,
+    applySuggestion,
+    autoFixAll
   };
 };

@@ -95,3 +95,14 @@ class ComparisonResponse(BaseModel):
 class ScenarioCreateResponse(BaseModel):
     filename: str
     config: ScenarioConfig
+
+class OptimizationSuggestion(BaseModel):
+    station_id: Optional[str] = None
+    type: str = Field(..., description="add_chargers, add_bays, add_station, remove_station")
+    description: str
+    priority: str = Field(..., pattern="^(high|medium|low)$")
+    action_payload: Dict[str, Any] = {}
+
+class OptimizationResponse(BaseModel):
+    suggestions: List[OptimizationSuggestion]
+

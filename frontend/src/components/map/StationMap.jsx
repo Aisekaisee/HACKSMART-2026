@@ -126,20 +126,35 @@ const StationMap = ({
       
       {/* Topology Lines */}
       {connections.map((pos, i) => (
-          <Polyline key={i} positions={pos} color="#404040" weight={1} opacity={0.5} dashArray="5, 10" />
+          <Polyline 
+            key={i} 
+            positions={pos} 
+            pathOptions={{
+                color: '#10b981', 
+                weight: 1, 
+                opacity: 0.4, 
+                dashArray: '10, 20', 
+                className: 'animate-flow' 
+            }} 
+          />
       ))}
       
-      {stations.map(station => (
+      {stations.map(station => {
+        const util = getStationUtil(station.station_id);
+        const isCritical = util > 0.8;
+        
+        return (
         <React.Fragment key={station.station_id}>
             {/* Interactive Radius Circle (Coverage) */}
             <Circle 
                 center={[station.lat, station.lon]} 
                 radius={2000} // 2km coverage
                 pathOptions={{ 
-                    color: selectedStationId === station.station_id ? '#10b981' : '#262626', 
-                    fillColor: selectedStationId === station.station_id ? '#10b981' : '#262626', 
-                    fillOpacity: 0.1, 
-                    weight: 1 
+                    color: selectedStationId === station.station_id ? '#10b981' : (isCritical ? '#ef4444' : '#262626'), 
+                    fillColor: selectedStationId === station.station_id ? '#10b981' : (isCritical ? '#ef4444' : '#262626'), 
+                    fillOpacity: isCritical ? 0.2 : 0.1, 
+                    weight: 1,
+                    className: isCritical ? 'pulse-red' : ''
                 }} 
             />
             
@@ -160,12 +175,14 @@ const StationMap = ({
             </Popup>
             </Marker>
         </React.Fragment>
-      ))}
+      )
+        })}
       
       <LocationPicker isActive={isPickingLocation} onPick={onLocationPicked} />
       <MapBounds stations={stations} />
     </MapContainer>
-  );
-};
+  )
+  
+}
 
 export default StationMap;

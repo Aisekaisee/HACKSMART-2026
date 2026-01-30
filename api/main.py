@@ -2,8 +2,8 @@ from fastapi import FastAPI, HTTPException, status
 from typing import List
 
 from api.models import (
-    BaselineConfig, ScenarioConfig, SimulationResponse, 
-    ComparisonResponse, ScenarioCreateResponse,
+    BaselineConfig, ScenarioConfig, ScenarioCreateResponse,
+    SimulationResponse, ComparisonResponse, OptimizationResponse,
     CityKPIValidationResponse, StationKPI
 )
 from api.services import SimulationService
@@ -135,4 +135,19 @@ async def run_comparison_simulation(data: dict):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Comparison simulation failed: {str(e)}"
+        )
+
+@app.post("/simulation/optimize", response_model=OptimizationResponse)
+async def optimize_network(config: BaselineConfig):
+    try:
+        # Run baseline first to get KPIs
+        response = SimulationService.run_baseline(config)
+        suggestions = SimulationService.generate_optimization_suggestions(response.kpis)
+        return OptimizationResponse(suggestions=suggestions)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Optimization failed: {str(e)}"
         )

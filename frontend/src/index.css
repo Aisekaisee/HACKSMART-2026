@@ -1,22 +1,19 @@
 @import "tailwindcss";
 
 @theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --color-bg-dark: #0a0a0a;
+  --color-panel: #171717;
+  --color-panel-border: #262626;
   --color-primary: #10b981;
   /* Emerald 500 */
-  --color-secondary: #3b82f6;
-  /* Blue 500 */
+  --color-semiprimary: #10b98120;
+  --color-secondary: #0ea5e9;
+  /* Sky 500 */
   --color-accent: #f59e0b;
   /* Amber 500 */
   --color-danger: #ef4444;
   /* Red 500 */
-
-  /* Premium Neutral Dark Theme - High Contrast */
-  --color-bg-dark: #0a0a0a;
-  /* Neutral Black */
-  --color-panel: #171717;
-  /* Neutral 900 */
-  --color-panel-border: #262626;
-  /* Neutral 800 */
   --color-text-main: #e5e5e5;
   /* Neutral 200 */
   --color-text-muted: #a3a3a3;

@@ -6,7 +6,7 @@ const ComparisonCharts = ({ baseline, scenario }) => {
 
   const data = [
     { name: 'Wait Time', baseline: baseline.avg_wait_time, scenario: scenario.avg_wait_time },
-    { name: 'Lost Swaps %', baseline: baseline.lost_swaps_pct * 100, scenario: scenario.lost_swaps_pct * 100 },
+    { name: 'Lost Swaps %', baseline: baseline.lost_swaps_pct, scenario: scenario.lost_swaps_pct },
     { name: 'Throughput', baseline: baseline.throughput, scenario: scenario.throughput },
   ];
 

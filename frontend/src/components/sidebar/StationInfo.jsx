@@ -106,7 +106,7 @@ const StationInfo = ({ station, kpiData, baselineKpiData }) => {
                      <div className="bg-panel p-4 rounded-xl border border-primary/20 shadow-[0_0_15px_-5px_var(--color-primary)]">
                         <KPIRow label="Avg Wait Time" value={kpiData.avg_wait_time} baselineValue={baselineKpiData?.avg_wait_time} unit="m" highlight invertTrend />
                         <KPIRow label="Lost Swaps" value={kpiData.lost_swaps} baselineValue={baselineKpiData?.lost_swaps} invertTrend />
-                        <KPIRow label="Lost Swaps %" value={kpiData.lost_swaps_pct * 100} baselineValue={baselineKpiData ? baselineKpiData.lost_swaps_pct * 100 : undefined} unit="%" invertTrend />
+                        <KPIRow label="Lost Swaps %" value={kpiData.lost_swaps_pct} baselineValue={baselineKpiData?.lost_swaps_pct} unit="%" invertTrend />
                         <KPIRow label="Charger Util." value={kpiData.charger_utilization * 100} baselineValue={baselineKpiData ? baselineKpiData.charger_utilization * 100 : undefined} unit="%" />
                         <KPIRow label="Bay Util." value={kpiData.bay_utilization * 100} baselineValue={baselineKpiData ? baselineKpiData.bay_utilization * 100 : undefined} unit="%" />
                      </div>

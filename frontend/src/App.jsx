@@ -4,6 +4,7 @@ import StationMap from './components/map/StationMap';
 import InterventionPanel from './components/sidebar/InterventionPanel';
 import StationInfo from './components/sidebar/StationInfo';
 import KPIDashboard from './components/dashboard/KPIDashboard';
+import AIOptimizer from './components/sidebar/AIOptimizer';
 import { useSimulation } from './hooks/useSimulation';
 
 function App() {
@@ -20,11 +21,18 @@ function App() {
     error,
     selectedStationId,
     setSelectedStationId,
+    // Opt
+    optimizeNetwork,
+    suggestions,
+    isOptimizing,
+    applySuggestion,
+    autoFixAll
   } = useSimulation();
   
   // -- Add Station UX State --
   const [isPickingLocation, setIsPickingLocation] = useState(false);
   const [addStationData, setAddStationData] = useState(null);
+  const [sidebarMode, setSidebarMode] = useState('intervention'); // intervention | ai
 
   const handleLocationPicked = (latlng) => {
       setIsPickingLocation(false);
@@ -93,22 +101,49 @@ function App() {
   return (
     <MainLayout
       leftPanel={
-        <InterventionPanel 
-            baselines={baselines}
-            selectedBaselineName={selectedBaselineName}
-            onSelectBaseline={setSelectedBaselineName}
-            scenarioConfig={scenarioConfig}
-            onUpdateScenario={updateScenario}
-            onRunSimulation={runSimulation}
-            loading={loading}
-            // Add Station Props
-            isPickingLocation={isPickingLocation}
-            setIsPickingLocation={setIsPickingLocation}
-            addStationData={addStationData}
-            setAddStationData={setAddStationData}
-            onConfirmAddStation={handleConfirmAddStation}
-            onCancelAddStation={handleCancelAddStation}
-        />
+        <div className="flex flex-col h-full">
+            {/* Sidebar Toggle */}
+            <div className="flex border-b border-panel-border">
+                <button 
+                    onClick={() => setSidebarMode('intervention')}
+                    className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-wider ${sidebarMode === 'intervention' ? 'bg-white/5 border-b-2 border-primary text-primary' : 'text-text-muted'}`}
+                >
+                    Interventions
+                </button>
+                <button 
+                    onClick={() => { setSidebarMode('ai'); optimizeNetwork(); }}
+                    className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 ${sidebarMode === 'ai' ? 'bg-white/5 border-b-2 border-accent text-accent' : 'text-text-muted hover:text-accent'}`}
+                >
+                   <span className="animate-pulse">✨</span> AI Pilot
+                </button>
+            </div>
+
+            {sidebarMode === 'intervention' ? (
+                <InterventionPanel 
+                    baselines={baselines}
+                    selectedBaselineName={selectedBaselineName}
+                    onSelectBaseline={setSelectedBaselineName}
+                    scenarioConfig={scenarioConfig}
+                    onUpdateScenario={updateScenario}
+                    onRunSimulation={runSimulation}
+                    loading={loading}
+                    // Add Station Props
+                    isPickingLocation={isPickingLocation}
+                    setIsPickingLocation={setIsPickingLocation}
+                    addStationData={addStationData}
+                    setAddStationData={setAddStationData}
+                    onConfirmAddStation={handleConfirmAddStation}
+                    onCancelAddStation={handleCancelAddStation}
+                />
+            ) : (
+                <AIOptimizer 
+                    isOptimizing={isOptimizing}
+                    suggestions={suggestions}
+                    onApplySuggestion={applySuggestion}
+                    onAutoFixAll={autoFixAll}
+                />
+            )}
+        </div>
       }
       mapPanel={
         <StationMap 

@@ -228,7 +228,6 @@ class SimulationService:
             simulation_duration=p_config.simulation_duration,
             random_seed=p_config.random_seed
         )
-
     @staticmethod
     def _pydantic_to_schema_scenario(p_config: ScenarioConfig) -> SchemaScenarioConfig:
         from config.schema import StationConfig, ScenarioConfig
@@ -244,3 +243,65 @@ class SimulationService:
             demand_multiplier=p_config.demand_multiplier,
             operations_override=p_config.operations_override
         )
+
+    @staticmethod
+    def generate_optimization_suggestions(baseline_kpis: KPISummary) -> List[Dict[str, Any]]:
+        suggestions = []
+        
+        # 1. Analyze City Level Issues
+        city = baseline_kpis.city_kpis
+        if city.lost_swaps_pct > 0.05:
+            suggestions.append({
+                "type": "add_station",
+                "station_id": None,
+                "description": f"High network-wide lost swaps ({city.lost_swaps_pct*100:.1f}%). New stations needed.",
+                "priority": "high",
+                "action_payload": {}
+            })
+            
+        # 2. Analyze Station Level Issues
+        for s in baseline_kpis.stations:
+            # High Utilization -> Add Chargers
+            if s.charger_utilization > 0.7:
+                suggestions.append({
+                    "type": "add_chargers",
+                    "station_id": s.station_id,
+                    "description": f"Station {s.station_id} is congested (Util: {s.charger_utilization*100:.1f}%). Add 2 chargers.",
+                    "priority": "high",
+                    "action_payload": {"station_id": s.station_id, "add_chargers": 2}
+                })
+            elif s.charger_utilization > 0.5:
+                 suggestions.append({
+                    "type": "add_chargers",
+                    "station_id": s.station_id,
+                    "description": f"Station {s.station_id} is busy (Util: {s.charger_utilization*100:.1f}%). Consider adding 1 charger.",
+                    "priority": "medium",
+                    "action_payload": {"station_id": s.station_id, "add_chargers": 1}
+                })
+            
+            # High Wait Time -> Add Bays
+            if s.avg_wait_time > 5.0:
+                 suggestions.append({
+                    "type": "add_bays",
+                    "station_id": s.station_id,
+                    "description": f"Long wait times at {s.station_id} ({s.avg_wait_time:.1f} min). Add 1 swap bay.",
+                    "priority": "high",
+                    "action_payload": {"station_id": s.station_id, "add_bays": 1}
+                })
+
+            # Low Utilization -> Optimization (Cost Saving)
+            if s.charger_utilization < 0.1 and s.total_arrivals > 0:
+                 suggestions.append({
+                    "type": "remove_chargers",
+                    "station_id": s.station_id,
+                    "description": f"Station {s.station_id} is underutilized (Util: {s.charger_utilization*100:.1f}%). Remove 1 charger to save OpEx.",
+                    "priority": "low",
+                    "action_payload": {"station_id": s.station_id, "remove_chargers": 1}
+                })
+                
+        # Sort by priority
+        priority_map = {"high": 0, "medium": 1, "low": 2}
+        suggestions.sort(key=lambda x: priority_map.get(x["priority"], 3))
+        
+        return suggestions
+
