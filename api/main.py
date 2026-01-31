@@ -1,5 +1,10 @@
 from fastapi import FastAPI, HTTPException, status
 from typing import List
+from dotenv import load_dotenv
+import os
+
+
+load_dotenv(override=True)
 
 from api.models import (
     BaselineConfig, ScenarioConfig, ScenarioCreateResponse,
