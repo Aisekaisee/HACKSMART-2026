@@ -13,31 +13,11 @@ from config.schema import ScenarioConfig as SchemaScenarioConfig
 from api.models import (
     BaselineConfig, ScenarioConfig, KPISummary, 
     SimulationResponse, ComparisonResponse, ScenarioCreateResponse,
-    CityKPIValidationResponse, ValidationResult, CityKPI, StationKPI,
-    TimelineFrame, TimelineStationSnapshot
+    CityKPIValidationResponse, ValidationResult, CityKPI, StationKPI
 )
 from validation.baseline_validator import BaselineValidator
 
 CONFIG_DIR = Path("configs")
-
-
-def _compute_timeline_interval(duration_minutes: float) -> float:
-    """Compute appropriate timeline recording interval based on simulation duration.
-    
-    Args:
-        duration_minutes: Total simulation duration in minutes.
-    
-    Returns:
-        Interval in minutes: 15 for daily (<=24h), 60 for weekly, 240 for monthly+.
-    """
-    duration_hours = duration_minutes / 60.0
-    
-    if duration_hours <= 24:
-        return 15.0  # 15-minute intervals for daily sims
-    elif duration_hours <= 168:  # 7 days
-        return 60.0  # Hourly intervals for weekly sims
-    else:
-        return 240.0  # 4-hour intervals for monthly+ sims
 
 class SimulationService:
     @staticmethod
@@ -180,10 +160,7 @@ class SimulationService:
         
         schema_config = SimulationService._pydantic_to_schema_baseline(config)
         
-        # Compute timeline interval based on simulation duration
-        timeline_interval = _compute_timeline_interval(schema_config.simulation_duration)
-        
-        engine = SimulationEngine(schema_config, timeline_interval_min=timeline_interval)
+        engine = SimulationEngine(schema_config)
         results = engine.run()
         
         kpis = KPICalculator.calculate(
@@ -207,8 +184,7 @@ class SimulationService:
     def run_comparison(baseline: BaselineConfig, scenario: ScenarioConfig) -> ComparisonResponse:
         # 1. Run Baseline
         base_schema = SimulationService._pydantic_to_schema_baseline(baseline)
-        base_timeline_interval = _compute_timeline_interval(base_schema.simulation_duration)
-        base_engine = SimulationEngine(base_schema, timeline_interval_min=base_timeline_interval)
+        base_engine = SimulationEngine(base_schema)
         base_results = base_engine.run()
         base_kpis = KPICalculator.calculate(
             base_results,
@@ -225,8 +201,7 @@ class SimulationService:
         modified_schema = ScenarioApplicator.apply_scenario(base_schema, scen_schema)
         
         # 3. Run Scenario
-        scen_timeline_interval = _compute_timeline_interval(modified_schema.simulation_duration)
-        scen_engine = SimulationEngine(modified_schema, timeline_interval_min=scen_timeline_interval)
+        scen_engine = SimulationEngine(modified_schema)
         scen_results = scen_engine.run()
         scen_kpis = KPICalculator.calculate(
             scen_results,

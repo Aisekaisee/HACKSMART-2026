@@ -19,15 +19,8 @@ from simulation.timeline_recorder import TimelineRecorder
 class SimulationEngine:
     """Discrete-event simulation engine using SimPy."""
     
-    def __init__(self, config: BaselineConfig, timeline_interval_min: float = None):
-        """Initialize simulation engine with configuration.
-        
-        Args:
-            config: Baseline configuration for the simulation.
-            timeline_interval_min: Optional interval for timeline recording.
-                                   If provided, enables timeline recording.
-                                   Recommended: 15 for 24h, 60 for weekly, 240 for monthly.
-        """
+    def __init__(self, config: BaselineConfig):
+        """Initialize simulation engine with configuration."""
         self.config = config
         self.env = simpy.Environment()
         self.stations: List[Station] = []
@@ -35,15 +28,34 @@ class SimulationEngine:
         self.hourly_snapshots: List[Dict[str, Any]] = []  # Time-series data
         
         # Timeline recorder for video-scrubber style playback
-        self.timeline_recorder = None
-        if timeline_interval_min is not None:
-            self.timeline_recorder = TimelineRecorder(interval_min=timeline_interval_min)
+        # Compute interval based on duration_hours
+        timeline_interval = self._compute_timeline_interval()
+        self.timeline_recorder = TimelineRecorder(interval_min=timeline_interval)
         
         # Set random seed for reproducibility
         if config.random_seed is not None:
             self.random_state = np.random.RandomState(config.random_seed)
         else:
             self.random_state = np.random.RandomState()
+    
+    def _compute_timeline_interval(self) -> float:
+        """Compute timeline recording interval based on simulation duration.
+        
+        Returns:
+            Interval in minutes: 15 for ≤24h, 60 for ≤168h (weekly), 240 otherwise.
+        """
+        # Get duration in hours from config (uses duration_hours if set, else simulation_duration/60)
+        if hasattr(self.config, 'duration_hours') and self.config.duration_hours is not None:
+            duration_hours = self.config.duration_hours
+        else:
+            duration_hours = self.config.simulation_duration / 60.0
+        
+        if duration_hours <= 24:
+            return 15.0  # 15-minute intervals for daily sims
+        elif duration_hours <= 168:  # 7 days
+            return 60.0  # Hourly intervals for weekly sims
+        else:
+            return 240.0  # 4-hour intervals for monthly+ sims
     
     def setup(self):
         """Set up simulation environment (create stations and demand generators)."""
@@ -62,9 +74,8 @@ class SimulationEngine:
         # Start hourly snapshot collection
         self.env.process(self._collect_hourly_snapshots())
         
-        # Start timeline recording if enabled
-        if self.timeline_recorder is not None:
-            self.env.process(self._record_timeline())
+        # Start timeline recording
+        self.env.process(self._record_timeline())
     
     def _collect_hourly_snapshots(self):
         """SimPy process to collect snapshot data every hour."""
@@ -157,7 +168,8 @@ class SimulationEngine:
             "simulation_duration": self.config.simulation_duration,
             "random_seed": self.config.random_seed,
             "hourly_snapshots": self.hourly_snapshots,  # Time-series data for playback
-            "timeline_frames": self.timeline_recorder.to_serializable() if self.timeline_recorder else [],
+            "timeline_frames": self.timeline_recorder.to_serializable(),
+            "timeline": self.timeline_recorder.to_serializable(),  # Alias for frontend compatibility
             "stations": []
         }
         
