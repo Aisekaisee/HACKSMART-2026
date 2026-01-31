@@ -56,22 +56,43 @@ class CostBreakdown:
     net_operational_profit: float  # Revenue - operational costs
     total_cost: float  # Capital + operational + opportunity
     
-    def to_dict(self) -> Dict[str, float]:
+    def get_operational_cost_dict(self) -> Dict[str, Any]:
+        """Get operational cost in the format expected by frontend.
+        
+        Returns:
+            Dict with "total" and "breakdown" keys.
+        """
+        return {
+            "total": round(self.total_operational, 2),
+            "breakdown": {
+                "charger": round(self.charging_cost + self.maintenance_cost, 2),
+                "inventory": round(self.inventory_capital / 365, 2),  # Daily amortized
+                "labor": round(self.labor_cost, 2),
+                "opportunity": round(self.lost_revenue, 2)
+            }
+        }
+    
+    def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
-
             "capital": {
                 "chargers": round(self.charger_capital, 2),
                 "inventory": round(self.inventory_capital, 2),
                 "total": round(self.total_capital, 2)
             },
             "operational_24hr": {
-                "swap_operations": round(self.swap_operations_cost, 2),
-                "electricity": round(self.charging_cost, 2),
-                "labor": round(self.labor_cost, 2),
-                "maintenance": round(self.maintenance_cost, 2),
-                "replenishment": round(self.replenishment_cost, 2),
-                "total": round(self.total_operational, 2)
+                "total": round(self.total_operational, 2),
+                "breakdown": {
+                    "charger": round(self.charging_cost + self.maintenance_cost, 2),
+                    "inventory": round(self.inventory_capital / 365, 2),  # Daily amortized
+                    "labor": round(self.labor_cost, 2),
+                    "opportunity": round(self.lost_revenue, 2),
+                    # Additional detail for transparency
+                    "swap_operations": round(self.swap_operations_cost, 2),
+                    "electricity": round(self.charging_cost, 2),
+                    "maintenance": round(self.maintenance_cost, 2),
+                    "replenishment": round(self.replenishment_cost, 2)
+                }
             },
             "opportunity": {
                 "lost_revenue": round(self.lost_revenue, 2)

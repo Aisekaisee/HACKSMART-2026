@@ -163,14 +163,16 @@ class SimulationService:
         engine = SimulationEngine(schema_config)
         results = engine.run()
         
+        # Calculate costs first so we can pass to KPI calculator
+        cost_model = CostModel()
+        costs = cost_model.calculate_costs(results, schema_config)
+        
         kpis = KPICalculator.calculate(
             results,
             swap_duration=schema_config.operations.swap_duration,
-            charge_duration=schema_config.operations.charge_duration
+            charge_duration=schema_config.operations.charge_duration,
+            cost_breakdown=costs
         )
-        
-        cost_model = CostModel()
-        costs = cost_model.calculate_costs(results, schema_config)
         
         # Include hourly snapshots and timeline frames for playback visualization
         return SimulationResponse(
@@ -186,12 +188,13 @@ class SimulationService:
         base_schema = SimulationService._pydantic_to_schema_baseline(baseline)
         base_engine = SimulationEngine(base_schema)
         base_results = base_engine.run()
+        base_costs = CostModel().calculate_costs(base_results, base_schema)
         base_kpis = KPICalculator.calculate(
             base_results,
             swap_duration=base_schema.operations.swap_duration,
-            charge_duration=base_schema.operations.charge_duration
+            charge_duration=base_schema.operations.charge_duration,
+            cost_breakdown=base_costs
         )
-        base_costs = CostModel().calculate_costs(base_results, base_schema)
         
         # 2. Apply Scenario
         # Convert Scenario Pydantic -> Schema
@@ -203,12 +206,13 @@ class SimulationService:
         # 3. Run Scenario
         scen_engine = SimulationEngine(modified_schema)
         scen_results = scen_engine.run()
+        scen_costs = CostModel().calculate_costs(scen_results, modified_schema)
         scen_kpis = KPICalculator.calculate(
             scen_results,
             swap_duration=modified_schema.operations.swap_duration,
-            charge_duration=modified_schema.operations.charge_duration
+            charge_duration=modified_schema.operations.charge_duration,
+            cost_breakdown=scen_costs
         )
-        scen_costs = CostModel().calculate_costs(scen_results, modified_schema)
         
         # 4. Compare costs
         cost_model = CostModel()

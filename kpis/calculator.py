@@ -40,16 +40,18 @@ class KPICalculator:
     def calculate(
         simulation_results: Dict[str, Any],
         swap_duration: float = 2.0,
-        charge_duration: float = 60.0
+        charge_duration: float = 60.0,
+        cost_breakdown: Any = None
     ) -> Dict[str, Any]:
         """
         Calculate all KPIs from simulation results.
-        Returns dict with 'city_kpis' and 'stations' lists.
+        Returns dict with frontend-expected keys and legacy 'city_kpis'/'stations' for compatibility.
         
         Args:
             simulation_results: Results from simulation engine
             swap_duration: Actual swap duration from config (minutes)
             charge_duration: Actual charge duration from config (minutes)
+            cost_breakdown: Optional CostBreakdown object for operational_cost
         """
         duration_hours = simulation_results["simulation_duration"] / 60.0
         
@@ -71,8 +73,47 @@ class KPICalculator:
             duration_hours
         )
         
-        # Format output
+        # Build per_station dict keyed by station_id
+        per_station = {}
+        for kpi in station_kpis_list:
+            per_station[kpi.station_id] = {
+                "avg_wait_time_min": round(kpi.avg_wait_time, 2),
+                "lost_swaps": kpi.lost_swaps,
+                "lost_swaps_pct": round(kpi.lost_swaps_pct, 2),
+                "idle_inventory_pct": round(kpi.avg_charged_inventory, 1),  # Proxy for idle
+                "charger_utilization_pct": round(kpi.charger_utilization * 100, 2),
+                "total_arrivals": kpi.total_arrivals,
+                "successful_swaps": kpi.successful_swaps
+            }
+        
+        # Build operational_cost dict (placeholder if not provided)
+        if cost_breakdown is not None:
+            operational_cost = cost_breakdown.get_operational_cost_dict()
+        else:
+            # Default placeholder - should be populated by caller
+            operational_cost = {
+                "total": 0.0,
+                "breakdown": {
+                    "charger": 0.0,
+                    "inventory": 0.0,
+                    "labor": 0.0,
+                    "opportunity": 0.0
+                }
+            }
+        
+        # Format output with exact keys frontend expects
         return {
+            # Frontend-expected top-level keys
+            "avg_wait_time_min": round(city_kpis.avg_wait_time, 2),
+            "lost_swaps": city_kpis.total_lost,
+            "lost_swaps_pct": round(city_kpis.lost_swaps_pct, 2),
+            "idle_inventory_pct": round(city_kpis.idle_inventory_pct, 2),
+            "charger_utilization_pct": round(city_kpis.charger_utilization * 100, 2),
+            "city_throughput_per_hour": round(city_kpis.throughput, 1),
+            "operational_cost": operational_cost,
+            "per_station": per_station,
+            
+            # Legacy format for backward compatibility
             "city_kpis": {
                 "avg_wait_time": round(city_kpis.avg_wait_time, 2),
                 "lost_swaps_pct": round(city_kpis.lost_swaps_pct, 2),
