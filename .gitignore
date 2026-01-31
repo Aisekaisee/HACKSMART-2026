@@ -42,7 +42,7 @@ venv.bak/
 *.ipynb
 
 # Output files
-*.json
+
 *.log
 *.csv
 results/

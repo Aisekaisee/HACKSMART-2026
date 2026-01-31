@@ -39,11 +39,18 @@ class KPICalculator:
     
     @staticmethod
     def calculate(
-        simulation_results: Dict[str, Any]
+        simulation_results: Dict[str, Any],
+        swap_duration: float = 2.0,
+        charge_duration: float = 60.0
     ) -> Dict[str, Any]:
         """
         Calculate all KPIs from simulation results.
         Returns dict with 'city_kpis' and 'stations' lists.
+        
+        Args:
+            simulation_results: Results from simulation engine
+            swap_duration: Actual swap duration from config (minutes)
+            charge_duration: Actual charge duration from config (minutes)
         """
         duration_hours = simulation_results["simulation_duration"] / 60.0
         
@@ -53,7 +60,9 @@ class KPICalculator:
         for station_data in simulation_results["stations"]:
             station_kpis = KPICalculator._calculate_station_kpis(
                 station_data,
-                simulation_results["simulation_duration"]
+                simulation_results["simulation_duration"],
+                swap_duration,
+                charge_duration
             )
             station_kpis_list.append(station_kpis)
         
@@ -96,7 +105,9 @@ class KPICalculator:
     @staticmethod
     def _calculate_station_kpis(
         station_data: Dict[str, Any],
-        simulation_duration: float
+        simulation_duration: float,
+        swap_duration: float = 2.0,
+        charge_duration: float = 60.0
     ) -> StationKPIs:
         """Calculate KPIs for a single station."""
         stats = station_data["stats"]
@@ -113,10 +124,11 @@ class KPICalculator:
         # Average wait time (already calculated in station)
         avg_wait_time = stats["avg_wait_time"]
         
-        # Charger utilization
+        # Charger utilization (using actual charge duration from config)
         charger_utilization = KPICalculator._calculate_charger_utilization(
             charge_events,
-            simulation_duration
+            simulation_duration,
+            charge_duration
         )
         
         # Average charged inventory
@@ -125,11 +137,11 @@ class KPICalculator:
             simulation_duration
         )
         
-        # Bay utilization
+        # Bay utilization (using actual swap duration from config)
         bay_utilization = KPICalculator._calculate_bay_utilization(
             swap_events,
             simulation_duration,
-            station_data["stats"]
+            swap_duration
         )
         
         return StationKPIs(
@@ -214,22 +226,19 @@ class KPICalculator:
     @staticmethod
     def _calculate_charger_utilization(
         charge_events: List,
-        simulation_duration: float
+        simulation_duration: float,
+        charge_duration: float = 60.0
     ) -> float:
         """Calculate charger utilization from charge events."""
         if not charge_events:
             return 0.0
         
-        # Count charge start and end events
-        charge_starts = [e for e in charge_events if e.event_type == "charge_start"]
+        # Count charge end events (completed charges)
         charge_ends = [e for e in charge_events if e.event_type == "charge_end"]
-        
-        # Calculate total charging time (approximation)
-        # Each completed charge represents one full charge duration
         completed_charges = len(charge_ends)
         
-        # Assume 60 min per charge (could be made more precise)
-        total_charging_time = completed_charges * 60.0
+        # Use actual charge duration from config
+        total_charging_time = completed_charges * charge_duration
         
         # Utilization = total charging time / simulation duration
         utilization = min(total_charging_time / simulation_duration, 1.0) if simulation_duration > 0 else 0.0
@@ -269,14 +278,14 @@ class KPICalculator:
     def _calculate_bay_utilization(
         swap_events: List,
         simulation_duration: float,
-        stats: Dict
+        swap_duration: float = 2.0
     ) -> float:
         """Calculate swap bay utilization."""
-        # Count swap durations (swap_start to swap_end)
+        # Count swap starts (completed swaps)
         swap_starts = [e for e in swap_events if e.event_type == "swap_start"]
         
-        # Assume 2 min per swap
-        total_swap_time = len(swap_starts) * 2.0
+        # Use actual swap duration from config
+        total_swap_time = len(swap_starts) * swap_duration
         
         # Utilization
         utilization = min(total_swap_time / simulation_duration, 1.0) if simulation_duration > 0 else 0.0

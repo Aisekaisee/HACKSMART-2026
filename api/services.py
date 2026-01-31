@@ -78,7 +78,11 @@ class SimulationService:
         
         engine = SimulationEngine(schema_config)
         results = engine.run()
-        kpis = KPICalculator.calculate(results)
+        kpis = KPICalculator.calculate(
+            results,
+            swap_duration=schema_config.operations.swap_duration,
+            charge_duration=schema_config.operations.charge_duration
+        )
         
         # Load validation reference
         # Ideally we load this once or cache it, but for now load per request
@@ -115,7 +119,11 @@ class SimulationService:
         
         engine = SimulationEngine(schema_config)
         results = engine.run()
-        kpis = KPICalculator.calculate(results)
+        kpis = KPICalculator.calculate(
+            results,
+            swap_duration=schema_config.operations.swap_duration,
+            charge_duration=schema_config.operations.charge_duration
+        )
         
         return [StationKPI(**s) for s in kpis["stations"]]
 
@@ -155,12 +163,21 @@ class SimulationService:
         engine = SimulationEngine(schema_config)
         results = engine.run()
         
-        kpis = KPICalculator.calculate(results)
+        kpis = KPICalculator.calculate(
+            results,
+            swap_duration=schema_config.operations.swap_duration,
+            charge_duration=schema_config.operations.charge_duration
+        )
         
         cost_model = CostModel()
         costs = cost_model.calculate_costs(results, schema_config)
         
-        return SimulationResponse(kpis=KPISummary(**kpis), costs=costs.to_dict())
+        # Include hourly snapshots for playback visualization
+        return SimulationResponse(
+            kpis=KPISummary(**kpis), 
+            costs=costs.to_dict(),
+            hourly_snapshots=results.get("hourly_snapshots", [])
+        )
 
     @staticmethod
     def run_comparison(baseline: BaselineConfig, scenario: ScenarioConfig) -> ComparisonResponse:
@@ -168,7 +185,11 @@ class SimulationService:
         base_schema = SimulationService._pydantic_to_schema_baseline(baseline)
         base_engine = SimulationEngine(base_schema)
         base_results = base_engine.run()
-        base_kpis = KPICalculator.calculate(base_results)
+        base_kpis = KPICalculator.calculate(
+            base_results,
+            swap_duration=base_schema.operations.swap_duration,
+            charge_duration=base_schema.operations.charge_duration
+        )
         base_costs = CostModel().calculate_costs(base_results, base_schema)
         
         # 2. Apply Scenario
@@ -181,7 +202,11 @@ class SimulationService:
         # 3. Run Scenario
         scen_engine = SimulationEngine(modified_schema)
         scen_results = scen_engine.run()
-        scen_kpis = KPICalculator.calculate(scen_results)
+        scen_kpis = KPICalculator.calculate(
+            scen_results,
+            swap_duration=modified_schema.operations.swap_duration,
+            charge_duration=modified_schema.operations.charge_duration
+        )
         scen_costs = CostModel().calculate_costs(scen_results, modified_schema)
         
         # 4. Compare costs
@@ -250,11 +275,11 @@ class SimulationService:
         
         # 1. Analyze City Level Issues
         city = baseline_kpis.city_kpis
-        if city.lost_swaps_pct > 0.05:
+        if city.lost_swaps_pct > 5.0:  # Fixed: was 0.05, now correctly triggers at 5%
             suggestions.append({
                 "type": "add_station",
                 "station_id": None,
-                "description": f"High network-wide lost swaps ({city.lost_swaps_pct*100:.1f}%). New stations needed.",
+                "description": f"High network-wide lost swaps ({city.lost_swaps_pct:.1f}%). New stations needed.",
                 "priority": "high",
                 "action_payload": {}
             })

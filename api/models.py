@@ -72,6 +72,21 @@ class KPISummary(BaseModel):
     city_kpis: CityKPI
     stations: List[StationKPI]
 
+# Time-series models for playback visualization
+class StationSnapshot(BaseModel):
+    station_id: str
+    charged_inventory: int
+    depleted_inventory: int
+    queue_depth: int
+    total_arrivals: int
+    successful_swaps: int
+    rejected_swaps: int
+
+class HourlySnapshot(BaseModel):
+    hour: int
+    time_minutes: float
+    stations: List[StationSnapshot]
+
 class ValidationResult(BaseModel):
     passed: bool
     details: Dict[str, str]
@@ -83,6 +98,7 @@ class CityKPIValidationResponse(BaseModel):
 class SimulationResponse(BaseModel):
     kpis: KPISummary
     costs: Optional[Dict[str, Any]] = None
+    hourly_snapshots: Optional[List[HourlySnapshot]] = None  # Time-series for playback
 
 class ComparisonResponse(BaseModel):
     baseline_kpis: Optional[KPISummary]

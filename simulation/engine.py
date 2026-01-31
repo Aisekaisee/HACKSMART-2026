@@ -24,6 +24,7 @@ class SimulationEngine:
         self.env = simpy.Environment()
         self.stations: List[Station] = []
         self.demand_generators: List[DemandGenerator] = []
+        self.hourly_snapshots: List[Dict[str, Any]] = []  # Time-series data
         
         # Set random seed for reproducibility
         if config.random_seed is not None:
@@ -44,6 +45,38 @@ class SimulationEngine:
             
             # Start demand generation process
             self.env.process(demand_gen.generate_arrivals())
+        
+        # Start hourly snapshot collection
+        self.env.process(self._collect_hourly_snapshots())
+    
+    def _collect_hourly_snapshots(self):
+        """SimPy process to collect snapshot data every hour."""
+        while True:
+            current_hour = int(self.env.now / 60)
+            
+            # Collect snapshot for all stations
+            snapshot = {
+                "hour": current_hour,
+                "time_minutes": self.env.now,
+                "stations": []
+            }
+            
+            for station in self.stations:
+                station_snapshot = {
+                    "station_id": station.station_id,
+                    "charged_inventory": station.charged_batteries,
+                    "depleted_inventory": station.depleted_batteries,
+                    "queue_depth": len(station.swap_bays.queue),
+                    "total_arrivals": station.total_arrivals,
+                    "successful_swaps": station.successful_swaps,
+                    "rejected_swaps": station.rejected_swaps,
+                }
+                snapshot["stations"].append(station_snapshot)
+            
+            self.hourly_snapshots.append(snapshot)
+            
+            # Wait 60 minutes for next snapshot
+            yield self.env.timeout(60)
     
     def run(self) -> Dict[str, Any]:
         """Run simulation and return results."""
@@ -98,6 +131,7 @@ class SimulationEngine:
         results = {
             "simulation_duration": self.config.simulation_duration,
             "random_seed": self.config.random_seed,
+            "hourly_snapshots": self.hourly_snapshots,  # Time-series data for playback
             "stations": []
         }
         
@@ -114,3 +148,4 @@ class SimulationEngine:
             results["stations"].append(station_data)
         
         return results
+
