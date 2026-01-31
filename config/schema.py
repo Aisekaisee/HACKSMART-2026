@@ -51,6 +51,14 @@ class DemandConfig:
     # Scenario-specific multipliers (applied globally or per-station)
     scenario_multiplier: float = 1.0
     
+    # Dynamic demand modifiers (weather, events, etc.)
+    # Weather modifiers: [{"multiplier": float, "start_hour": int, "end_hour": int}]
+    weather_modifiers: List[Dict] = field(default_factory=list)
+    
+    # Event modifiers (geo-scoped): [{"latitude": float, "longitude": float, "radius_km": float,
+    #                                  "multiplier": float, "start_hour": int, "end_hour": int}]
+    event_modifiers: List[Dict] = field(default_factory=list)
+    
 
 @dataclass
 class OperationalConfig:
@@ -98,3 +106,14 @@ class ScenarioConfig:
     
     # Operational modifications
     operations_override: Optional[Dict] = field(default_factory=dict)
+    
+    # Intervention types
+    # Weather demand: [{"type": "weather_demand", "multiplier": float, "start_hour": int, "end_hour": int}]
+    weather_demand: List[Dict] = field(default_factory=list)
+    
+    # Event demand (geo-scoped): [{"type": "event_demand", "latitude": float, "longitude": float,
+    #                              "radius_km": float, "multiplier": float, "start_hour": int, "end_hour": int}]
+    event_demand: List[Dict] = field(default_factory=list)
+    
+    # Replenishment policy: [{"type": "replenishment_policy", "policy": str, "params": dict, "station_id": str|None}]
+    replenishment_policies: List[Dict] = field(default_factory=list)

@@ -1,7 +1,7 @@
 """Scenario applicator for applying deltas to baseline configuration."""
 
 import copy
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from config.schema import BaselineConfig, ScenarioConfig, StationConfig
 from config.loader import ConfigLoader
@@ -52,6 +52,27 @@ class ScenarioApplicator:
                 scenario.operations_override
             )
         
+        # Apply weather demand interventions
+        if scenario.weather_demand:
+            ScenarioApplicator._apply_weather_demand(
+                modified_config,
+                scenario.weather_demand
+            )
+        
+        # Apply event demand interventions (geo-scoped)
+        if scenario.event_demand:
+            ScenarioApplicator._apply_event_demand(
+                modified_config,
+                scenario.event_demand
+            )
+        
+        # Apply replenishment policy interventions
+        if scenario.replenishment_policies:
+            ScenarioApplicator._apply_replenishment_policies(
+                modified_config,
+                scenario.replenishment_policies
+            )
+        
         return modified_config
     
     @staticmethod
@@ -79,3 +100,87 @@ class ScenarioApplicator:
                 setattr(operations, param, value)
             else:
                 raise ValueError(f"Operations has no parameter '{param}'")
+    
+    @staticmethod
+    def _apply_weather_demand(
+        config: BaselineConfig,
+        weather_interventions: List[Dict]
+    ):
+        """
+        Apply weather demand interventions.
+        
+        Weather demand multiplies demand globally for a time window.
+        Each intervention: {"multiplier": float, "start_hour": int, "end_hour": int}
+        """
+        for intervention in weather_interventions:
+            modifier = {
+                "scope": "global",
+                "multiplier": intervention.get("multiplier", 1.0),
+                "start_hour": intervention.get("start_hour", 0),
+                "end_hour": intervention.get("end_hour", 24),
+            }
+            config.demand.weather_modifiers.append(modifier)
+    
+    @staticmethod
+    def _apply_event_demand(
+        config: BaselineConfig,
+        event_interventions: List[Dict]
+    ):
+        """
+        Apply event demand interventions (geo-scoped).
+        
+        Event demand affects only stations within radius_km of the event location.
+        Each intervention: {
+            "latitude": float, "longitude": float, "radius_km": float,
+            "multiplier": float, "start_hour": int, "end_hour": int
+        }
+        """
+        for intervention in event_interventions:
+            modifier = {
+                "scope": "geo",
+                "latitude": intervention.get("latitude"),
+                "longitude": intervention.get("longitude"),
+                "radius_km": intervention.get("radius_km", 5.0),
+                "multiplier": intervention.get("multiplier", 1.0),
+                "start_hour": intervention.get("start_hour", 0),
+                "end_hour": intervention.get("end_hour", 24),
+            }
+            config.demand.event_modifiers.append(modifier)
+    
+    @staticmethod
+    def _apply_replenishment_policies(
+        config: BaselineConfig,
+        policy_interventions: List[Dict]
+    ):
+        """
+        Apply replenishment policy interventions.
+        
+        Changes how stations restock batteries.
+        Each intervention: {
+            "policy": str ("base_stock", "s_s", "jit"),
+            "params": dict (policy-specific parameters),
+            "station_id": str|None (if None, apply to all stations)
+        }
+        
+        Sets replenishment_policy and replenishment_params on station config(s).
+        """
+        for intervention in policy_interventions:
+            policy = intervention.get("policy", "base_stock")
+            params = intervention.get("params", {})
+            station_id = intervention.get("station_id")
+            
+            if station_id:
+                # Apply to specific station
+                for station in config.stations:
+                    if station.station_id == station_id:
+                        # Store policy info on the station object
+                        # (Station class should handle these if they exist)
+                        station.replenishment_policy = policy
+                        station.replenishment_params = params
+                        break
+            else:
+                # Apply to all stations
+                for station in config.stations:
+                    station.replenishment_policy = policy
+                    station.replenishment_params = params
+
