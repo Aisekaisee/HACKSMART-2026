@@ -13,18 +13,31 @@ if __name__ == "__main__":
 from config.schema import BaselineConfig, StationConfig
 from simulation.station import Station
 from simulation.demand import DemandGenerator
+from simulation.timeline_recorder import TimelineRecorder
 
 
 class SimulationEngine:
     """Discrete-event simulation engine using SimPy."""
     
-    def __init__(self, config: BaselineConfig):
-        """Initialize simulation engine with configuration."""
+    def __init__(self, config: BaselineConfig, timeline_interval_min: float = None):
+        """Initialize simulation engine with configuration.
+        
+        Args:
+            config: Baseline configuration for the simulation.
+            timeline_interval_min: Optional interval for timeline recording.
+                                   If provided, enables timeline recording.
+                                   Recommended: 15 for 24h, 60 for weekly, 240 for monthly.
+        """
         self.config = config
         self.env = simpy.Environment()
         self.stations: List[Station] = []
         self.demand_generators: List[DemandGenerator] = []
         self.hourly_snapshots: List[Dict[str, Any]] = []  # Time-series data
+        
+        # Timeline recorder for video-scrubber style playback
+        self.timeline_recorder = None
+        if timeline_interval_min is not None:
+            self.timeline_recorder = TimelineRecorder(interval_min=timeline_interval_min)
         
         # Set random seed for reproducibility
         if config.random_seed is not None:
@@ -48,6 +61,10 @@ class SimulationEngine:
         
         # Start hourly snapshot collection
         self.env.process(self._collect_hourly_snapshots())
+        
+        # Start timeline recording if enabled
+        if self.timeline_recorder is not None:
+            self.env.process(self._record_timeline())
     
     def _collect_hourly_snapshots(self):
         """SimPy process to collect snapshot data every hour."""
@@ -66,7 +83,7 @@ class SimulationEngine:
                     "station_id": station.station_id,
                     "charged_inventory": station.charged_store.level,
                     "depleted_inventory": station.depleted_count,
-                    "queue_depth": len(station.charged_store.get_queue),
+                    "queue_length": len(station.charged_store.get_queue),
                     "total_arrivals": station.total_arrivals,
                     "successful_swaps": station.successful_swaps,
                     "rejected_swaps": station.rejected_swaps,
@@ -77,6 +94,14 @@ class SimulationEngine:
             
             # Wait 60 minutes for next snapshot
             yield self.env.timeout(60)
+    
+    def _record_timeline(self):
+        """SimPy process to tick the timeline recorder."""
+        while True:
+            # Tick the recorder with current time and stations
+            self.timeline_recorder.tick(self.env.now, self.stations)
+            # Check every minute (the recorder handles interval logic internally)
+            yield self.env.timeout(1)
     
     def run(self) -> Dict[str, Any]:
         """Run simulation and return results."""
@@ -132,6 +157,7 @@ class SimulationEngine:
             "simulation_duration": self.config.simulation_duration,
             "random_seed": self.config.random_seed,
             "hourly_snapshots": self.hourly_snapshots,  # Time-series data for playback
+            "timeline_frames": self.timeline_recorder.to_serializable() if self.timeline_recorder else [],
             "stations": []
         }
         

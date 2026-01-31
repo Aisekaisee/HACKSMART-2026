@@ -76,7 +76,7 @@ class StationSnapshot(BaseModel):
     station_id: str
     charged_inventory: int
     depleted_inventory: int
-    queue_depth: int
+    queue_length: int
     total_arrivals: int
     successful_swaps: int
     rejected_swaps: int
@@ -85,6 +85,22 @@ class HourlySnapshot(BaseModel):
     hour: int
     time_minutes: float
     stations: List[StationSnapshot]
+
+# Timeline recorder models for video-scrubber style playback
+class TimelineStationSnapshot(BaseModel):
+    """Snapshot of a single station at a point in time."""
+    station_id: str
+    timestamp_min: float
+    queue_length: int
+    batteries_available: int
+    chargers_in_use: int
+    swaps_completed: int
+    swaps_lost: int
+
+class TimelineFrame(BaseModel):
+    """A single frame in the simulation timeline."""
+    timestamp_min: float
+    stations: List[TimelineStationSnapshot]
 
 class ValidationResult(BaseModel):
     passed: bool
@@ -98,6 +114,7 @@ class SimulationResponse(BaseModel):
     kpis: KPISummary
     costs: Optional[Dict[str, Any]] = None
     hourly_snapshots: Optional[List[HourlySnapshot]] = None  # Time-series for playback
+    timeline_frames: Optional[List[TimelineFrame]] = None  # Video-scrubber style playback
 
 class ComparisonResponse(BaseModel):
     baseline_kpis: Optional[KPISummary]
