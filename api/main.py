@@ -46,6 +46,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+import numpy as np
+
+def sanitize_for_json(obj):
+    """Recursively convert numpy types to native Python types for JSON serialization."""
+    if isinstance(obj, dict):
+        return {k: sanitize_for_json(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [sanitize_for_json(i) for i in obj]
+    elif isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.bool_):
+        return bool(obj)
+    elif isinstance(obj, np.ndarray):
+        return sanitize_for_json(obj.tolist())
+    return obj
+
 
 # ============================================================
 # HEALTH CHECK
@@ -457,6 +475,8 @@ async def save_baseline_config(
         )
 
 
+
+
 @app.post("/projects/{project_id}/validate-baseline", response_model=BaselineValidationResponse)
 async def validate_baseline(
     project_id: str,
@@ -484,7 +504,9 @@ async def validate_baseline(
         
         # Run simulation
         result = run_simulation(baseline_scenario, project, stations)
-        kpis = result.get("kpis", {})
+        
+        # === FIX: Sanitize the KPIs before processing ===
+        kpis = sanitize_for_json(result.get("kpis", {}))
         
         # Load reference KPIs for validation
         from pathlib import Path
@@ -508,6 +530,10 @@ async def validate_baseline(
                 }
             }
             passed = True
+            
+        # === FIX: Sanitize the report before saving ===
+        report = sanitize_for_json(report)
+        passed = bool(passed) # Force native boolean
         
         # Save validation result to database
         supabase = get_supabase()
@@ -523,7 +549,7 @@ async def validate_baseline(
         # Update project's baseline_valid flag and baseline_kpis
         supabase.table("projects").update({
             "baseline_valid": passed,
-            "baseline_kpis": kpis,
+            "baseline_kpis": kpis, # Sanitize applied above
             "updated_at": "now()"
         }).eq("id", project_id).execute()
         
@@ -544,7 +570,6 @@ async def validate_baseline(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Validation failed: {str(e)}"
         )
-
 
 # ============================================================
 # LEGACY ROUTES (preserved for backward compatibility)
