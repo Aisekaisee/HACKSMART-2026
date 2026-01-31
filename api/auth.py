@@ -14,22 +14,91 @@ from api.supabase_client import get_supabase
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
 
 
+# async def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, str]:
+#     """Get the current authenticated user from JWT token.
+    
+#     Decodes the JWT, extracts the user ID from the 'sub' claim,
+#     and fetches the user's role from the profiles table.
+    
+#     Args:
+#         token: Bearer token from Authorization header.
+    
+#     Returns:
+#         Dict with user_id (UUID) and role.
+    
+#     Raises:
+#         HTTPException: 401 if token is missing or invalid.
+#         HTTPException: 404 if user profile doesn't exist.
+#     """
+#     if not token:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail="Authorization token is missing",
+#             headers={"WWW-Authenticate": "Bearer"},
+#         )
+    
+#     # Get JWT secret from environment
+#     jwt_secret = os.environ.get("SUPABASE_JWT_SECRET")
+#     if not jwt_secret:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail="JWT secret not configured",
+#         )
+    
+#     # Decode the JWT
+#     try:
+#         payload = jwt.decode(
+#             token,
+#             jwt_secret,
+#             algorithms=["HS256"],
+#             options={"verify_aud": False}  # Supabase JWTs may not have audience
+#         )
+#         user_id: str = payload.get("sub")
+        
+#         if user_id is None:
+#             raise HTTPException(
+#                 status_code=status.HTTP_401_UNAUTHORIZED,
+#                 detail="Invalid token: missing user ID",
+#                 headers={"WWW-Authenticate": "Bearer"},
+#             )
+#     except JWTError as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail=f"Invalid token: {str(e)}",
+#             headers={"WWW-Authenticate": "Bearer"},
+#         )
+    
+#     # Query the profiles table to get user's role
+#     supabase = get_supabase()
+#     try:
+#         response = supabase.table("profiles").select("role").eq("id", user_id).single().execute()
+        
+#         if not response.data:
+#             raise HTTPException(
+#                 status_code=status.HTTP_404_NOT_FOUND,
+#                 detail="User profile not found",
+#             )
+        
+#         role = response.data.get("role", "viewer")
+        
+#     except Exception as e:
+#         # If it's already an HTTPException, re-raise it
+#         if isinstance(e, HTTPException):
+#             raise
+#         # Otherwise, profile doesn't exist
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="User profile not found",
+#         )
+    
+#     return {
+#         "user_id": user_id,
+#         "role": role
+#     }
+
+
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, str]:
-    """Get the current authenticated user from JWT token.
-    
-    Decodes the JWT, extracts the user ID from the 'sub' claim,
-    and fetches the user's role from the profiles table.
-    
-    Args:
-        token: Bearer token from Authorization header.
-    
-    Returns:
-        Dict with user_id (UUID) and role.
-    
-    Raises:
-        HTTPException: 401 if token is missing or invalid.
-        HTTPException: 404 if user profile doesn't exist.
-    """
+    """Get the current authenticated user by validating with Supabase."""
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -37,65 +106,46 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, str
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Get JWT secret from environment
-    jwt_secret = os.environ.get("SUPABASE_JWT_SECRET")
-    if not jwt_secret:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="JWT secret not configured",
-        )
+    supabase = get_supabase()
     
-    # Decode the JWT
     try:
-        payload = jwt.decode(
-            token,
-            jwt_secret,
-            algorithms=["HS256"],
-            options={"verify_aud": False}  # Supabase JWTs may not have audience
-        )
-        user_id: str = payload.get("sub")
+        # 1. Ask Supabase to validate the token and return the user
+        # This handles the ES256/HS256 verification automatically
+        user_response = supabase.auth.get_user(token)
+        user = user_response.user
         
-        if user_id is None:
+        if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token: missing user ID",
+                detail="Invalid token",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-    except JWTError as e:
+
+        user_id = user.id
+
+    except Exception as e:
+        # Catch Supabase/GoTrue errors
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid token: {str(e)}",
+            detail=f"Invalid authentication: {str(e)}",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Query the profiles table to get user's role
-    supabase = get_supabase()
+    # 2. Query the profiles table to get user's role (Keep your existing logic)
     try:
         response = supabase.table("profiles").select("role").eq("id", user_id).single().execute()
         
-        if not response.data:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User profile not found",
-            )
+        # Default to viewer if profile not found, or handle 404
+        role = response.data.get("role", "viewer") if response.data else "viewer"
         
-        role = response.data.get("role", "viewer")
-        
-    except Exception as e:
-        # If it's already an HTTPException, re-raise it
-        if isinstance(e, HTTPException):
-            raise
-        # Otherwise, profile doesn't exist
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User profile not found",
-        )
+    except Exception:
+        # Fallback if profile lookup fails
+        role = "viewer"
     
     return {
         "user_id": user_id,
         "role": role
     }
-
 
 def require_role(*allowed_roles: str) -> Callable:
     """Factory that creates a dependency requiring specific role(s).
