@@ -159,7 +159,11 @@ class SimulationEngine:
             base_rate=base_rate,
             time_multipliers=self.config.demand.time_multipliers,
             scenario_multiplier=self.config.demand.scenario_multiplier,
-            random_state=self.random_state
+            random_state=self.random_state,
+            station_lat=station_config.lat,
+            station_lon=station_config.lon,
+            weather_modifiers=self.config.demand.weather_modifiers,
+            event_modifiers=self.config.demand.event_modifiers
         )
     
     def _collect_results(self) -> Dict[str, Any]:
