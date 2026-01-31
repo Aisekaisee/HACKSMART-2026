@@ -1,0 +1,214 @@
+{
+  "scenario_name": "Network Expansion",
+  "scenario_description": "Add 2 new medium-tier stations and increase chargers at existing high-tier stations",
+  "baseline_kpis": {
+    "city_kpis": {
+      "avg_wait_time": 0.02,
+      "lost_swaps_pct": 61.11,
+      "charger_utilization": 1.0,
+      "idle_inventory_pct": 6.13,
+      "throughput": 20.5,
+      "cost_proxy": 122.22,
+      "total_arrivals": 1265,
+      "total_swaps": 491,
+      "total_lost": 773
+    },
+    "stations": [
+      {
+        "station_id": "WDL_01",
+        "tier": "high",
+        "avg_wait_time": 0.0,
+        "lost_swaps": 265,
+        "lost_swaps_pct": 59.02,
+        "total_arrivals": 449,
+        "successful_swaps": 183,
+        "charger_utilization": 1.0,
+        "avg_charged_inventory": 7.6,
+        "bay_utilization": 0.256
+      },
+      {
+        "station_id": "CNP_02",
+        "tier": "high",
+        "avg_wait_time": 0.01,
+        "lost_swaps": 284,
+        "lost_swaps_pct": 65.44,
+        "total_arrivals": 434,
+        "successful_swaps": 150,
+        "charger_utilization": 1.0,
+        "avg_charged_inventory": 7.2,
+        "bay_utilization": 0.208
+      },
+      {
+        "station_id": "RKP_03",
+        "tier": "medium",
+        "avg_wait_time": 0.04,
+        "lost_swaps": 149,
+        "lost_swaps_pct": 60.32,
+        "total_arrivals": 247,
+        "successful_swaps": 98,
+        "charger_utilization": 1.0,
+        "avg_charged_inventory": 5.1,
+        "bay_utilization": 0.136
+      },
+      {
+        "station_id": "DWK_04",
+        "tier": "low",
+        "avg_wait_time": 0.04,
+        "lost_swaps": 75,
+        "lost_swaps_pct": 55.56,
+        "total_arrivals": 135,
+        "successful_swaps": 60,
+        "charger_utilization": 1.0,
+        "avg_charged_inventory": 4.6,
+        "bay_utilization": 0.083
+      }
+    ]
+  },
+  "scenario_kpis": {
+    "city_kpis": {
+      "avg_wait_time": 0.02,
+      "lost_swaps_pct": 55.36,
+      "charger_utilization": 1.0,
+      "idle_inventory_pct": 6.37,
+      "throughput": 33.1,
+      "cost_proxy": 110.74,
+      "total_arrivals": 1781,
+      "total_swaps": 795,
+      "total_lost": 986
+    },
+    "stations": [
+      {
+        "station_id": "WDL_01",
+        "tier": "high",
+        "avg_wait_time": 0.0,
+        "lost_swaps": 183,
+        "lost_swaps_pct": 45.07,
+        "total_arrivals": 406,
+        "successful_swaps": 223,
+        "charger_utilization": 1.0,
+        "avg_charged_inventory": 9.8,
+        "bay_utilization": 0.31
+      },
+      {
+        "station_id": "CNP_02",
+        "tier": "high",
+        "avg_wait_time": 0.02,
+        "lost_swaps": 253,
+        "lost_swaps_pct": 56.1,
+        "total_arrivals": 451,
+        "successful_swaps": 198,
+        "charger_utilization": 1.0,
+        "avg_charged_inventory": 7.0,
+        "bay_utilization": 0.275
+      },
+      {
+        "station_id": "RKP_03",
+        "tier": "medium",
+        "avg_wait_time": 0.05,
+        "lost_swaps": 169,
+        "lost_swaps_pct": 64.02,
+        "total_arrivals": 264,
+        "successful_swaps": 95,
+        "charger_utilization": 1.0,
+        "avg_charged_inventory": 4.8,
+        "bay_utilization": 0.132
+      },
+      {
+        "station_id": "DWK_04",
+        "tier": "low",
+        "avg_wait_time": 0.0,
+        "lost_swaps": 59,
+        "lost_swaps_pct": 48.76,
+        "total_arrivals": 121,
+        "successful_swaps": 62,
+        "charger_utilization": 1.0,
+        "avg_charged_inventory": 4.9,
+        "bay_utilization": 0.086
+      },
+      {
+        "station_id": "KKN_05",
+        "tier": "medium",
+        "avg_wait_time": 0.0,
+        "lost_swaps": 153,
+        "lost_swaps_pct": 55.43,
+        "total_arrivals": 276,
+        "successful_swaps": 123,
+        "charger_utilization": 1.0,
+        "avg_charged_inventory": 6.9,
+        "bay_utilization": 0.171
+      },
+      {
+        "station_id": "SDA_06",
+        "tier": "medium",
+        "avg_wait_time": 0.09,
+        "lost_swaps": 169,
+        "lost_swaps_pct": 64.26,
+        "total_arrivals": 263,
+        "successful_swaps": 94,
+        "charger_utilization": 1.0,
+        "avg_charged_inventory": 4.7,
+        "bay_utilization": 0.131
+      }
+    ]
+  },
+  "baseline_costs": {
+    "capital": {
+      "chargers": 800000.0,
+      "bays": 275000.0,
+      "inventory": 1800000.0,
+      "total": 2875000.0
+    },
+    "operational_24hr": {
+      "swap_operations": 9820.0,
+      "electricity": 14730.0,
+      "labor": 19200.0,
+      "maintenance": 800.0,
+      "replenishment": 6000.0,
+      "total": 50550.0
+    },
+    "opportunity": {
+      "lost_revenue": 115950.0
+    },
+    "revenue": {
+      "total": 73650.0
+    },
+    "summary": {
+      "net_operational_profit": 23100.0,
+      "total_cost": 3041500.0
+    }
+  },
+  "scenario_costs": {
+    "capital": {
+      "chargers": 1350000.0,
+      "bays": 400000.0,
+      "inventory": 2775000.0,
+      "total": 4525000.0
+    },
+    "operational_24hr": {
+      "swap_operations": 15900.0,
+      "electricity": 23850.0,
+      "labor": 28800.0,
+      "maintenance": 1350.0,
+      "replenishment": 9000.0,
+      "total": 78900.0
+    },
+    "opportunity": {
+      "lost_revenue": 147900.0
+    },
+    "revenue": {
+      "total": 119250.0
+    },
+    "summary": {
+      "net_operational_profit": 40350.0,
+      "total_cost": 4751800.0
+    }
+  },
+  "cost_deltas": {
+    "capital_delta": 1650000.0,
+    "operational_delta": 28350.0,
+    "lost_revenue_delta": 31950.0,
+    "revenue_delta": 45600.0,
+    "profit_delta": 17250.0,
+    "total_cost_delta": 1710300.0
+  }
+}

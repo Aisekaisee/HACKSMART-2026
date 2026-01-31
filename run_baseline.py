@@ -79,7 +79,11 @@ def main():
     print("Calculating KPIs...")
     print(f"{'='*60}\n")
     
-    kpis = KPICalculator.calculate(results)
+    kpis = KPICalculator.calculate(
+        results,
+        swap_duration=baseline_config.operations.swap_duration,
+        charge_duration=baseline_config.operations.charge_duration
+    )
     
     # Calculate cost breakdown
     cost_model = CostModel()
@@ -140,7 +144,7 @@ def print_kpis(kpis: dict):
         print(f"  Successful Swaps:       {station['successful_swaps']}")
         print(f"  Lost Swaps:             {station['lost_swaps']} ({station['lost_swaps_pct']:.1f}%)")
         print(f"  Avg Wait Time:          {station['avg_wait_time']:.2f} minutes")
-        print(f"  Bay Utilization:        {station['bay_utilization']:.1%}")
+
         print(f"  Charger Utilization:    {station['charger_utilization']:.1%}")
         print(f"  Avg Charged Inventory:  {station['avg_charged_inventory']:.1f} batteries")
     

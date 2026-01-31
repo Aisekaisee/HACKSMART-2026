@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 class Station(BaseModel):
     station_id: str
     tier: str = Field(pattern="^(high|medium|low)$")
-    bays: int = Field(gt=0)
+    # bays removed
     chargers: int = Field(ge=0)
     inventory_capacity: int = Field(gt=0)
     lat: float
@@ -20,7 +20,7 @@ class Demand(BaseModel):
 
 class Operations(BaseModel):
     swap_duration: float = 2.0
-    charge_duration: float = 60.0
+    charge_duration: float = 210.0
     replenishment_threshold: float = 0.2
     replenishment_amount: int = 10
     replenishment_delay: float = 30.0
@@ -54,7 +54,6 @@ class StationKPI(BaseModel):
     lost_swaps: int
     lost_swaps_pct: float
     avg_wait_time: float
-    bay_utilization: float
     charger_utilization: float
     avg_charged_inventory: float
 

@@ -40,7 +40,7 @@ class Station:
         env: simpy.Environment,
         station_id: str,
         tier: str,
-        bays: int,
+        # bays: int, # Removed
         chargers: int,
         inventory_capacity: int,
         initial_charged: int,
@@ -56,13 +56,19 @@ class Station:
         self.tier = tier
         
         # Resources
-        self.swap_bays = simpy.Resource(env, capacity=bays)
-        self.chargers = simpy.Resource(env, capacity=chargers)
+        # self.swap_bays = simpy.Resource(env, capacity=bays) # Removed
+        # self.chargers = simpy.Resource(env, capacity=chargers) # Implicit in having inventory=chargers
         
-        # Inventory
-        self.inventory_capacity = inventory_capacity
-        self.charged_batteries = initial_charged
-        self.depleted_batteries = 0
+        # Inventory Management
+        # We use a Container to separate "Available Charged" from "Depleted/Charging".
+        # Capacity is the total number of physical batteries (which equals chargers).
+        self.inventory_capacity = chargers 
+        initial_level = min(initial_charged, chargers)
+        self.charged_store = simpy.Container(env, capacity=chargers, init=initial_level)
+        
+        # Track depleted count only for logging/stats (logic is handled by the store wait)
+        self.depleted_count = chargers - initial_level
+        self.charging_count = 0 # Batteries currently in charge cycle
         
         # Operational parameters
         self.swap_duration = swap_duration
@@ -82,11 +88,13 @@ class Station:
         self.charge_events: List[ChargeEvent] = []
         self.inventory_events: List[InventoryEvent] = []
         
-        # Initialize charging process if chargers available
-        if chargers > 0:
-            for i in range(chargers):
-                env.process(self._charger_process(i))
-        
+        # Initialize charging for any initially depleted batteries?
+        # If we start with depleted batteries, they should probably be charging.
+        if self.depleted_count > 0:
+             # Spawn charge cycles for initial empty slots
+             for _ in range(self.depleted_count):
+                 env.process(self._charge_cycle())
+
         # Log initial inventory
         self._log_inventory()
     
@@ -103,110 +111,91 @@ class Station:
             customer_id=customer_id
         ))
         
-        # Check if charged battery available
-        if self.charged_batteries <= 0:
-            # Reject swap
-            self.rejected_swaps += 1
-            self.swap_events.append(SwapEvent(
-                time=self.env.now,
-                station_id=self.station_id,
-                event_type="rejected",
-                customer_id=customer_id,
-                wait_time=0.0
-            ))
-            return
+        # 1. Wait for a charged battery (Queueing Logic)
+        # If no battery is available, this yield will block until one is put into the store.
+        # This effectively models the queue.
         
-        # Request swap bay
-        with self.swap_bays.request() as bay_request:
-            yield bay_request
-            
-            # Calculate wait time
-            swap_start_time = self.env.now
-            wait_time = swap_start_time - arrival_time
-            self.total_wait_time += wait_time
-            
-            # Log swap start
-            self.swap_events.append(SwapEvent(
-                time=swap_start_time,
-                station_id=self.station_id,
-                event_type="swap_start",
-                customer_id=customer_id,
-                wait_time=wait_time
-            ))
-            
-            # Perform swap
-            yield self.env.timeout(self.swap_duration)
-            
-            # Update inventory
-            self.charged_batteries -= 1
-            self.depleted_batteries += 1
-            self.successful_swaps += 1
-            
-            # Log swap end
-            self.swap_events.append(SwapEvent(
-                time=self.env.now,
-                station_id=self.station_id,
-                event_type="swap_end",
-                customer_id=customer_id,
-                wait_time=wait_time
-            ))
-            
-            self._log_inventory()
-            
-            # Check if replenishment needed
-            if self.charged_batteries < self.inventory_capacity * self.replenishment_threshold:
-                self.env.process(self._replenish())
-    
-    def _charger_process(self, charger_id: int):
-        """Individual charger process - continuously charges depleted batteries."""
-        while True:
-            # Wait until depleted batteries are available
-            if self.depleted_batteries > 0:
-                # Start charging
-                charge_start = self.env.now
-                self.charge_events.append(ChargeEvent(
-                    time=charge_start,
-                    station_id=self.station_id,
-                    event_type="charge_start"
-                ))
-                
-                # Move one battery from depleted to charging
-                self.depleted_batteries -= 1
-                
-                # Wait for charge duration
-                yield self.env.timeout(self.charge_duration)
-                
-                # Complete charging
-                self.charged_batteries += 1
-                self.charge_events.append(ChargeEvent(
-                    time=self.env.now,
-                    station_id=self.station_id,
-                    event_type="charge_end"
-                ))
-                
-                self._log_inventory()
-            else:
-                # No depleted batteries, wait a bit
-                yield self.env.timeout(1.0)  # Check every minute
-    
-    def _replenish(self):
-        """Replenish inventory with fresh charged batteries."""
-        yield self.env.timeout(self.replenishment_delay)
+        swap_req_time = self.env.now
         
-        # Add batteries up to capacity
-        available_space = self.inventory_capacity - (self.charged_batteries + self.depleted_batteries)
-        actual_amount = min(self.replenishment_amount, available_space)
+        # We can track queue depth here roughly
+        # queue_entry = SwapEvent(...) 
         
-        self.charged_batteries += actual_amount
+        yield self.charged_store.get(1)
+        
+        # Battery acquired.
+        battery_acquire_time = self.env.now
+        wait_time = battery_acquire_time - swap_req_time
+        self.total_wait_time += wait_time
+        
+        # Log Swap Start
+        self.swap_events.append(SwapEvent(
+            time=self.env.now,
+            station_id=self.station_id,
+            event_type="swap_start",
+            customer_id=customer_id,
+            wait_time=wait_time
+        ))
+        
+        # 2. Perform Swap Operation
+        # (Assuming swap duration takes time)
+        yield self.env.timeout(self.swap_duration)
+        
+        self.successful_swaps += 1
+        self.depleted_count += 1 # Received a depleted battery
+        
+        # Log Swap End
+        self.swap_events.append(SwapEvent(
+            time=self.env.now,
+            station_id=self.station_id,
+            event_type="swap_end",
+            customer_id=customer_id,
+            wait_time=wait_time
+        ))
+        
         self._log_inventory()
+        
+        # 3. Start Charging the received depleted battery immediately
+        # Since num_batteries = num_chargers, we always have a "slot" to charge the battery we just got.
+        self.env.process(self._charge_cycle())
+    
+    def _charge_cycle(self):
+        """Process for charging a single battery independently."""
+        # Log Start
+        self.charge_events.append(ChargeEvent(
+            time=self.env.now,
+            station_id=self.station_id,
+            event_type="charge_start"
+        ))
+        
+        self.charging_count += 1
+        
+        # Simulate Charge Duration
+        yield self.env.timeout(self.charge_duration)
+        
+        # Log End
+        self.charge_events.append(ChargeEvent(
+            time=self.env.now,
+            station_id=self.station_id,
+            event_type="charge_end"
+        ))
+        
+        self.charging_count -= 1
+        self.depleted_count -= 1 # It's now charged
+        
+        # Put back into store (making it available for waiting customers)
+        yield self.charged_store.put(1)
+        self._log_inventory()
+
+    # Replenishment removed/commented out as it conflicts with closed-loop battery=charger constraint for now
+    # def _replenish(self): ...
     
     def _log_inventory(self):
         """Log current inventory state."""
         self.inventory_events.append(InventoryEvent(
             time=self.env.now,
             station_id=self.station_id,
-            charged_count=self.charged_batteries,
-            depleted_count=self.depleted_batteries
+            charged_count=self.charged_store.level,
+            depleted_count=self.depleted_count
         ))
     
     def get_stats_summary(self) -> Dict[str, Any]:

@@ -73,7 +73,11 @@ def main():
         
         baseline_engine = SimulationEngine(baseline_config)
         baseline_results = baseline_engine.run()
-        baseline_kpis = KPICalculator.calculate(baseline_results)
+        baseline_kpis = KPICalculator.calculate(
+            baseline_results,
+            swap_duration=baseline_config.operations.swap_duration,
+            charge_duration=baseline_config.operations.charge_duration
+        )
         
         print("Baseline complete!\n")
     
@@ -102,7 +106,11 @@ def main():
     
     scenario_engine = SimulationEngine(modified_config)
     scenario_results = scenario_engine.run()
-    scenario_kpis = KPICalculator.calculate(scenario_results)
+    scenario_kpis = KPICalculator.calculate(
+        scenario_results,
+        swap_duration=modified_config.operations.swap_duration,
+        charge_duration=modified_config.operations.charge_duration
+    )
     
     print("Scenario complete!\n")
     

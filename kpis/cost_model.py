@@ -14,7 +14,6 @@ class CostParameters:
     
     # Capital costs (one-time)
     cost_per_charger: float = 50000.0  # ₹50k per charger
-    cost_per_bay: float = 25000.0      # ₹25k per swap bay
     cost_per_battery: float = 15000.0  # ₹15k per battery (inventory)
     
     # Operational costs (per event/hour)
@@ -36,7 +35,6 @@ class CostBreakdown:
     
     # Capital costs
     charger_capital: float
-    bay_capital: float
     inventory_capital: float
     total_capital: float
     
@@ -61,9 +59,9 @@ class CostBreakdown:
     def to_dict(self) -> Dict[str, float]:
         """Convert to dictionary for serialization."""
         return {
+
             "capital": {
                 "chargers": round(self.charger_capital, 2),
-                "bays": round(self.bay_capital, 2),
                 "inventory": round(self.inventory_capital, 2),
                 "total": round(self.total_capital, 2)
             },
@@ -115,13 +113,11 @@ class CostModel:
         
         # Calculate capital costs from baseline configuration
         total_chargers = sum(s.chargers for s in baseline_config.stations)
-        total_bays = sum(s.bays for s in baseline_config.stations)
         total_inventory = sum(s.inventory_capacity for s in baseline_config.stations)
         
         charger_capital = total_chargers * self.params.cost_per_charger
-        bay_capital = total_bays * self.params.cost_per_bay
         inventory_capital = total_inventory * self.params.cost_per_battery
-        total_capital = charger_capital + bay_capital + inventory_capital
+        total_capital = charger_capital + inventory_capital
         
         # Calculate operational costs (24hr simulation period)
         total_successful_swaps = sum(s["stats"]["successful_swaps"] for s in stations)
@@ -162,7 +158,6 @@ class CostModel:
         
         return CostBreakdown(
             charger_capital=charger_capital,
-            bay_capital=bay_capital,
             inventory_capital=inventory_capital,
             total_capital=total_capital,
             swap_operations_cost=swap_operations_cost,
@@ -206,7 +201,6 @@ class CostModel:
         
         print("\nCAPITAL COSTS (One-time Investment)")
         print(f"  Chargers:           ₹{costs.charger_capital:>12,.0f}")
-        print(f"  Swap Bays:          ₹{costs.bay_capital:>12,.0f}")
         print(f"  Battery Inventory:  ₹{costs.inventory_capital:>12,.0f}")
         print(f"  {'─'*40}")
         print(f"  Total Capital:      ₹{costs.total_capital:>12,.0f}")

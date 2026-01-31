@@ -9,7 +9,7 @@ class StationConfig:
     """Configuration for a single swap station."""
     station_id: str
     tier: str  # "high", "medium", "low"
-    bays: int  # Number of parallel swap bays
+    # bays removed
     chargers: int  # Number of parallel chargers
     inventory_capacity: int  # Maximum battery inventory
     lat: float
@@ -23,7 +23,7 @@ class StationConfig:
         
         # Validation
         assert self.tier in ["high", "medium", "low"], f"Invalid tier: {self.tier}"
-        assert self.bays > 0, "Bays must be positive"
+        # assert self.bays > 0, "Bays must be positive" # Removed
         assert self.chargers >= 0, "Chargers cannot be negative"
         assert self.inventory_capacity > 0, "Inventory capacity must be positive"
         assert 0 <= self.initial_charged <= self.inventory_capacity
@@ -56,7 +56,7 @@ class DemandConfig:
 class OperationalConfig:
     """Configuration for operational parameters."""
     swap_duration: float = 2.0  # minutes
-    charge_duration: float = 60.0  # minutes
+    charge_duration: float = 210.0  # minutes (3.5 hours)
     replenishment_threshold: float = 0.2  # Trigger replenishment at 20% capacity
     replenishment_amount: int = 10  # Number of batteries to replenish
     replenishment_delay: float = 30.0  # minutes to receive replenishment
@@ -68,11 +68,16 @@ class BaselineConfig:
     stations: List[StationConfig]
     demand: DemandConfig
     operations: OperationalConfig
-    simulation_duration: float = 1440.0  # minutes (24 hours)
+    duration_hours: Optional[float] = None  # Duration in hours (if provided, overrides simulation_duration)
+    simulation_duration: float = 1440.0  # minutes (24 hours default)
     random_seed: Optional[int] = 42
     
     def __post_init__(self):
         """Validate baseline config."""
+        # If duration_hours is provided, convert to minutes and use as simulation_duration
+        if self.duration_hours is not None:
+            self.simulation_duration = self.duration_hours * 60.0
+        
         assert len(self.stations) > 0, "At least one station required"
         assert self.simulation_duration > 0, "Simulation duration must be positive"
 

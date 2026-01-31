@@ -64,9 +64,9 @@ class SimulationEngine:
             for station in self.stations:
                 station_snapshot = {
                     "station_id": station.station_id,
-                    "charged_inventory": station.charged_batteries,
-                    "depleted_inventory": station.depleted_batteries,
-                    "queue_depth": len(station.swap_bays.queue),
+                    "charged_inventory": station.charged_store.level,
+                    "depleted_inventory": station.depleted_count,
+                    "queue_depth": len(station.charged_store.get_queue),
                     "total_arrivals": station.total_arrivals,
                     "successful_swaps": station.successful_swaps,
                     "rejected_swaps": station.rejected_swaps,
@@ -97,7 +97,7 @@ class SimulationEngine:
             env=self.env,
             station_id=station_config.station_id,
             tier=station_config.tier,
-            bays=station_config.bays,
+            # bays=station_config.bays, # Removed
             chargers=station_config.chargers,
             inventory_capacity=station_config.inventory_capacity,
             initial_charged=station_config.initial_charged,

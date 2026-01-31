@@ -17,7 +17,6 @@ class StationKPIs:
     successful_swaps: int
     charger_utilization: float  # 0-1
     avg_charged_inventory: float
-    bay_utilization: float  # 0-1
 
 
 @dataclass
@@ -95,8 +94,7 @@ class KPICalculator:
                     "total_arrivals": kpi.total_arrivals,
                     "successful_swaps": kpi.successful_swaps,
                     "charger_utilization": round(kpi.charger_utilization, 3),
-                    "avg_charged_inventory": round(kpi.avg_charged_inventory, 1),
-                    "bay_utilization": round(kpi.bay_utilization, 3)
+                    "avg_charged_inventory": round(kpi.avg_charged_inventory, 1)
                 }
                 for kpi in station_kpis_list
             ]
@@ -137,13 +135,6 @@ class KPICalculator:
             simulation_duration
         )
         
-        # Bay utilization (using actual swap duration from config)
-        bay_utilization = KPICalculator._calculate_bay_utilization(
-            swap_events,
-            simulation_duration,
-            swap_duration
-        )
-        
         return StationKPIs(
             station_id=station_data["station_id"],
             tier=station_data["tier"],
@@ -153,8 +144,7 @@ class KPICalculator:
             total_arrivals=total_arrivals,
             successful_swaps=successful_swaps,
             charger_utilization=charger_utilization,
-            avg_charged_inventory=avg_charged_inventory,
-            bay_utilization=bay_utilization
+            avg_charged_inventory=avg_charged_inventory
         )
     
     @staticmethod
@@ -274,20 +264,4 @@ class KPICalculator:
         
         return avg_inventory
     
-    @staticmethod
-    def _calculate_bay_utilization(
-        swap_events: List,
-        simulation_duration: float,
-        swap_duration: float = 2.0
-    ) -> float:
-        """Calculate swap bay utilization."""
-        # Count swap starts (completed swaps)
-        swap_starts = [e for e in swap_events if e.event_type == "swap_start"]
-        
-        # Use actual swap duration from config
-        total_swap_time = len(swap_starts) * swap_duration
-        
-        # Utilization
-        utilization = min(total_swap_time / simulation_duration, 1.0) if simulation_duration > 0 else 0.0
-        
-        return utilization
+
