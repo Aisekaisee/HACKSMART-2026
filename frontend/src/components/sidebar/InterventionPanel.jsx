@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Zap, CloudRain, Music, Cog } from 'lucide-react';
+import { Plus, Trash2, Zap, CloudRain, Music, Cog, Save, FolderOpen } from 'lucide-react';
 
 const InterventionPanel = ({ 
     baselines, 
@@ -10,16 +10,22 @@ const InterventionPanel = ({
     onRunSimulation,
     loading,
     isPickingLocation,
-    setIsPickingLocation, // New Prop
+    setIsPickingLocation,
     addStationData,
-    setAddStationData, // New Prop
-    onConfirmAddStation, // New Prop
-    onCancelAddStation
+    setAddStationData,
+    onConfirmAddStation,
+    onCancelAddStation,
+    // Scenario Save/Load
+    savedScenarios = [],
+    onSaveScenario,
+    onLoadScenario
 }) => {
     
     if (!scenarioConfig) return <div className="p-4 text-text-muted">Loading configuration...</div>;
 
     const [activeTab, setActiveTab] = useState('scenarios'); // scenarios | stations | tweaks
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
     
     // Handlers
     const handlePreset = (type) => {
@@ -38,6 +44,22 @@ const InterventionPanel = ({
                 description: 'Rain slows down operations'
             });
         }
+    };
+
+    const handleSaveScenario = async () => {
+        if (!onSaveScenario) return;
+        setIsSaving(true);
+        const result = await onSaveScenario(scenarioConfig.name);
+        setIsSaving(false);
+        if (result) {
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 2000);
+        }
+    };
+
+    const handleLoadScenario = async (filename) => {
+        if (!onLoadScenario || !filename) return;
+        await onLoadScenario(filename);
     };
 
     return (
@@ -114,6 +136,40 @@ const InterventionPanel = ({
                                 className="w-full accent-primary h-1 bg-panel-border rounded-lg appearance-none cursor-pointer"
                             />
                         </div>
+
+                        {/* Load Saved Scenario */}
+                        {savedScenarios && savedScenarios.length > 0 && (
+                            <div className="space-y-2">
+                                <label className="text-xs font-semibold text-text-muted uppercase flex items-center gap-2">
+                                    <FolderOpen size={12} /> Load Saved
+                                </label>
+                                <select 
+                                    onChange={(e) => handleLoadScenario(e.target.value)}
+                                    className="w-full bg-bg-dark border border-panel-border rounded p-2 text-xs text-text-main focus:border-primary focus:outline-none"
+                                    defaultValue=""
+                                >
+                                    <option value="" disabled>Select a saved scenario...</option>
+                                    {savedScenarios.map(s => (
+                                        <option key={s} value={s}>{s.replace('scenario_', '').replace('.yaml', '')}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        {/* Save Scenario Button */}
+                        <button
+                            onClick={handleSaveScenario}
+                            disabled={isSaving}
+                            className={`w-full py-2 text-xs font-bold uppercase tracking-wider rounded flex items-center justify-center gap-2 transition-all
+                                ${saveSuccess 
+                                    ? 'bg-primary text-bg-dark' 
+                                    : 'bg-white/5 border border-panel-border text-text-muted hover:text-primary hover:border-primary'
+                                }
+                            `}
+                        >
+                            <Save size={12} />
+                            {isSaving ? 'Saving...' : saveSuccess ? 'Saved!' : 'Save Scenario'}
+                        </button>
                     </>
                 )}
 

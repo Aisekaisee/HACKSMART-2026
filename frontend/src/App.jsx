@@ -4,6 +4,7 @@ import StationMap from './components/map/StationMap';
 import InterventionPanel from './components/sidebar/InterventionPanel';
 import StationInfo from './components/sidebar/StationInfo';
 import KPIDashboard from './components/dashboard/KPIDashboard';
+import SimulationPlayback from './components/dashboard/SimulationPlayback';
 import AIOptimizer from './components/sidebar/AIOptimizer';
 import { useSimulation } from './hooks/useSimulation';
 
@@ -26,13 +27,20 @@ function App() {
     suggestions,
     isOptimizing,
     applySuggestion,
-    autoFixAll
+    autoFixAll,
+    // Scenario Save/Load
+    savedScenarios,
+    saveScenario,
+    loadScenario
   } = useSimulation();
   
   // -- Add Station UX State --
   const [isPickingLocation, setIsPickingLocation] = useState(false);
   const [addStationData, setAddStationData] = useState(null);
   const [sidebarMode, setSidebarMode] = useState('intervention'); // intervention | ai
+
+  // Playback state - track which hour snapshot to visualize on map
+  const [playbackSnapshot, setPlaybackSnapshot] = useState(null);
 
   const handleLocationPicked = (latlng) => {
       setIsPickingLocation(false);
@@ -61,6 +69,11 @@ function App() {
   const handleCancelAddStation = () => {
       setIsPickingLocation(false);
       setAddStationData(null);
+  };
+
+  // Handle playback hour change - can be used to update map markers
+  const handlePlaybackHourChange = (hour, snapshot) => {
+      setPlaybackSnapshot(snapshot);
   };
 
   // Determine stations to display
@@ -98,6 +111,9 @@ function App() {
       }
   }
 
+  // Extract hourly snapshots from results for playback
+  const hourlySnapshots = results?.baseline?.hourly_snapshots || results?.scenario?.hourly_snapshots || [];
+
   return (
     <MainLayout
       leftPanel={
@@ -134,6 +150,10 @@ function App() {
                     setAddStationData={setAddStationData}
                     onConfirmAddStation={handleConfirmAddStation}
                     onCancelAddStation={handleCancelAddStation}
+                    // Scenario Save/Load
+                    savedScenarios={savedScenarios}
+                    onSaveScenario={saveScenario}
+                    onLoadScenario={loadScenario}
                 />
             ) : (
                 <AIOptimizer 
@@ -154,6 +174,8 @@ function App() {
             onLocationPicked={handleLocationPicked}
             // Pass KPI data for coloring (Use scenario if avail, else baseline)
             kpiData={results?.scenario?.kpis || results?.baseline?.kpis}
+            // Pass playback snapshot for dynamic visualization
+            playbackSnapshot={playbackSnapshot}
         />
       }
       rightPanel={
@@ -164,10 +186,26 @@ function App() {
         />
       }
       bottomPanel={
-        <KPIDashboard results={results} />
+        <div className="flex gap-4 h-full">
+          {/* KPI Dashboard - takes most space */}
+          <div className="flex-1">
+            <KPIDashboard results={results} />
+          </div>
+          {/* Simulation Playback - compact sidebar */}
+          {hourlySnapshots.length > 0 && (
+            <div className="w-72 shrink-0">
+              <SimulationPlayback 
+                hourlySnapshots={hourlySnapshots}
+                onHourChange={handlePlaybackHourChange}
+                stations={stationsToDisplay}
+              />
+            </div>
+          )}
+        </div>
       }
     />
   );
 }
 
 export default App;
+

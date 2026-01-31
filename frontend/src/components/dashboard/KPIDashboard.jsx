@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { ArrowUp, ArrowDown, Activity, DollarSign, Clock, Battery, PieChart as PieIcon, BarChart3 } from 'lucide-react';
+import { ArrowUp, ArrowDown, Activity, DollarSign, Clock, Battery, PieChart as PieIcon, BarChart3, GitCompare } from 'lucide-react';
 import ComparisonCharts from './ComparisonCharts';
+import ComparisonView from './ComparisonView';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import AnimatedCounter from '../common/AnimatedCounter';
 
@@ -164,6 +165,12 @@ const KPIDashboard = ({ results }) => {
                 >
                     Finance
                 </button>
+                <button 
+                    onClick={() => setViewMode('comparison')}
+                    className={`px-3 py-1 text-[10px] uppercase font-bold rounded flex items-center gap-1 ${viewMode === 'comparison' ? 'bg-accent text-bg-dark' : 'text-text-muted hover:text-text-main'}`}
+                >
+                    <GitCompare size={10} /> Compare
+                </button>
             </div>
 
         <div className="flex gap-4 h-full relative">
@@ -193,6 +200,16 @@ const KPIDashboard = ({ results }) => {
                              <FinancialBreakdown costs={costs} />
                          </div>
                     </>
+                )}
+                
+                {viewMode === 'comparison' && (
+                    <div className="col-span-4">
+                        <ComparisonView 
+                            baseline={baseline} 
+                            scenario={scenario} 
+                            comparison={comparison} 
+                        />
+                    </div>
                 )}
             </div>
 

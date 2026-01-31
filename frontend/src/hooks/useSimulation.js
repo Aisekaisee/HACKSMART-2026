@@ -17,21 +17,28 @@ export const useSimulation = () => {
   // Selected Station for Info Panel
   const [selectedStationId, setSelectedStationId] = useState(null);
 
-  // Initial Load
+  // Saved Scenarios
+  const [savedScenarios, setSavedScenarios] = useState([]);
+
+  // Initial Load - baselines and saved scenarios
   useEffect(() => {
-    const fetchBaselines = async () => {
+    const fetchData = async () => {
       try {
-        const list = await api.listBaselines();
-        setBaselines(list);
-        if (list.length > 0) {
-          setSelectedBaselineName(list[0]);
+        const [baselineList, scenarioList] = await Promise.all([
+          api.listBaselines(),
+          api.listScenarios()
+        ]);
+        setBaselines(baselineList);
+        setSavedScenarios(scenarioList);
+        if (baselineList.length > 0) {
+          setSelectedBaselineName(baselineList[0]);
         }
       } catch (err) {
-        console.error("Failed to load baselines", err);
-        setError("Failed to load baselines");
+        console.error("Failed to load configs", err);
+        setError("Failed to load configurations");
       }
     };
-    fetchBaselines();
+    fetchData();
   }, []);
 
   // Load Baseline Config when selection changes
@@ -175,6 +182,36 @@ export const useSimulation = () => {
       suggestions.forEach(s => applySuggestion(s));
   };
 
+  // Save current scenario to YAML file
+  const saveScenario = async (name) => {
+    if (!scenarioConfig) return null;
+    try {
+      const toSave = { ...scenarioConfig, name: name || scenarioConfig.name };
+      const result = await api.createScenario(toSave);
+      // Refresh scenarios list
+      const updatedList = await api.listScenarios();
+      setSavedScenarios(updatedList);
+      return result;
+    } catch (err) {
+      console.error("Failed to save scenario", err);
+      setError("Failed to save scenario");
+      return null;
+    }
+  };
+
+  // Load a saved scenario
+  const loadScenario = async (filename) => {
+    try {
+      const config = await api.getScenario(filename);
+      setScenarioConfig(config);
+      return config;
+    } catch (err) {
+      console.error("Failed to load scenario", err);
+      setError("Failed to load scenario");
+      return null;
+    }
+  };
+
   return {
     baselines,
     selectedBaselineName,
@@ -193,6 +230,10 @@ export const useSimulation = () => {
     suggestions,
     isOptimizing,
     applySuggestion,
-    autoFixAll
+    autoFixAll,
+    // Scenario Save/Load
+    savedScenarios,
+    saveScenario,
+    loadScenario
   };
 };

@@ -6,8 +6,8 @@ import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
 // --- Assets ---
-// Create colored icons dynamically or use simple CSS divs? L.DivIcon is better for premium look.
-const createStationIcon = (utilization, isSelected) => {
+// Create colored icons dynamically with optional pulse animation
+const createStationIcon = (utilization, isSelected, isActive = false) => {
     // Green (<0.5), Yellow (<0.8), Red (>0.8)
     let color = '#10b981'; // Emerald 500
     if (utilization > 0.8) color = '#ef4444'; // Red 500
@@ -15,6 +15,11 @@ const createStationIcon = (utilization, isSelected) => {
     
     // Size changes slightly if selected
     const size = isSelected ? 18 : 14;
+    
+    // Add pulse animation class if station is active (during playback)
+    const pulseStyle = isActive ? `
+        animation: stationPulse 1.5s ease-in-out infinite;
+    ` : '';
     
     return L.divIcon({
         className: 'custom-div-icon',
@@ -24,8 +29,9 @@ const createStationIcon = (utilization, isSelected) => {
             height: ${size}px;
             border-radius: 50%;
             border: 2px solid #0a0a0a;
-            box-shadow: 0 0 10px ${color}80;
+            box-shadow: 0 0 ${isActive ? '20px' : '10px'} ${color}${isActive ? '' : '80'};
             transition: all 0.3s ease;
+            ${pulseStyle}
         "></div>`,
         iconSize: [size, size],
         iconAnchor: [size/2, size/2]
