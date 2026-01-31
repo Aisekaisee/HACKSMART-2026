@@ -1,12 +1,16 @@
-from fastapi import FastAPI, HTTPException, status, Depends
-from typing import List, Dict, Any
-from dotenv import load_dotenv
-import os
-import traceback
-
-
-load_dotenv(override=True)
-
+import numpy as np
+from fastapi.middleware.cors import CORSMiddleware
+from validation.baseline_validator import BaselineValidator
+from api.supabase_client import get_supabase
+from api.auth import get_current_user, require_role
+from api.services import (
+    SimulationService,
+    # New Supabase services
+    create_project, get_projects, get_project, update_project,
+    create_station, get_stations, update_station, delete_station,
+    create_scenario, get_scenarios, get_scenario, update_scenario_result,
+    run_simulation
+)
 from api.models import (
     BaselineConfig, ScenarioConfig, ScenarioCreateResponse,
     SimulationResponse, ComparisonResponse, OptimizationResponse,
@@ -16,19 +20,17 @@ from api.models import (
     ProjectCreate, ProjectUpdate, ProjectOut,
     StationCreate, StationUpdate, StationOut,
     ScenarioCreate, ScenarioOut, InterventionItem,
-    SimulationRunResponse, BaselineValidationResponse
+    SimulationRunResponse, BaselineValidationResponse, BaselineRunResponse
 )
-from api.services import (
-    SimulationService,
-    # New Supabase services
-    create_project, get_projects, get_project, update_project,
-    create_station, get_stations, update_station, delete_station,
-    create_scenario, get_scenarios, get_scenario, update_scenario_result,
-    run_simulation
-)
-from api.auth import get_current_user, require_role
-from api.supabase_client import get_supabase
-from validation.baseline_validator import BaselineValidator
+from fastapi import FastAPI, HTTPException, status, Depends
+from typing import List, Dict, Any
+from dotenv import load_dotenv
+import os
+import traceback
+
+
+load_dotenv(override=True)
+
 
 app = FastAPI(
     title="Digital Twin Simulation API",
@@ -36,7 +38,6 @@ app = FastAPI(
     version="2.0.0"
 )
 
-from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
@@ -46,7 +47,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-import numpy as np
 
 def sanitize_for_json(obj):
     """Recursively convert numpy types to native Python types for JSON serialization."""
@@ -87,25 +87,26 @@ async def signup(request: SignUpRequest):
             "email": request.email,
             "password": request.password
         })
-        
+
         # Check if we got a session (email confirmation may be required)
         if not response.session:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email confirmation required. Please check your email to confirm your account."
             )
-        
+
         user_id = response.user.id
-        
+
         # Get user's role from profiles table
         profile_response = supabase.table("profiles") \
             .select("role") \
             .eq("id", user_id) \
             .single() \
             .execute()
-        
-        role = profile_response.data.get("role", "viewer") if profile_response.data else "viewer"
-        
+
+        role = profile_response.data.get(
+            "role", "viewer") if profile_response.data else "viewer"
+
         return TokenResponse(
             access_token=response.session.access_token,
             refresh_token=response.session.refresh_token,
@@ -130,24 +131,25 @@ async def login(request: LoginRequest):
             "email": request.email,
             "password": request.password
         })
-        
+
         if not response.session:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid credentials"
             )
-        
+
         user_id = response.user.id
-        
+
         # Get user's role from profiles table
         profile_response = supabase.table("profiles") \
             .select("role") \
             .eq("id", user_id) \
             .single() \
             .execute()
-        
-        role = profile_response.data.get("role", "viewer") if profile_response.data else "viewer"
-        
+
+        role = profile_response.data.get(
+            "role", "viewer") if profile_response.data else "viewer"
+
         return TokenResponse(
             access_token=response.session.access_token,
             refresh_token=response.session.refresh_token,
@@ -253,7 +255,7 @@ async def create_station_route(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Project '{project_id}' not found"
         )
-    
+
     station = create_station(project_id, data)
     if not station:
         raise HTTPException(
@@ -323,7 +325,7 @@ async def create_scenario_route(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Project '{project_id}' not found"
         )
-    
+
     scenario = create_scenario(project_id, data)
     if not scenario:
         raise HTTPException(
@@ -377,47 +379,87 @@ async def run_scenario_simulation(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project '{project_id}' not found"
             )
-        
+
         scenario = get_scenario(scenario_id)
         if not scenario:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Scenario '{scenario_id}' not found"
             )
-        
+
         stations = get_stations(project_id)
-        
+
+        # If no stations in DB, use baseline_config stations as fallback
+        if not stations and project.get("baseline_config", {}).get("stations"):
+            stations = [
+                {
+                    "id": f"baseline-{i}",
+                    "project_id": project_id,
+                    "station_id": s["station_id"],
+                    "name": f"{s.get('tier', 'Standard').capitalize()} Tier Station",
+                    "latitude": s["lat"],
+                    "longitude": s["lon"],
+                    "chargers": s["chargers"],
+                    "inventory_cap": s["inventory_capacity"],
+                    "active": True,
+                }
+                for i, s in enumerate(project["baseline_config"]["stations"])
+            ]
+
         # Update status to running
         supabase = get_supabase()
         supabase.table("scenarios") \
             .update({"status": "running", "updated_at": "now()"}) \
             .eq("id", scenario_id) \
             .execute()
-        
+
         # Run simulation
         result = run_simulation(scenario, project, stations)
-        
+
+        # Sanitize KPIs
+        kpis = sanitize_for_json(result.get("kpis", {}))
+        city_kpis = kpis.get("city_kpis", {})
+        station_kpis = kpis.get("station_kpis", {})
+
         # Save results back to scenario
         update_scenario_result(
             scenario_id,
-            kpis=result.get("kpis", {}),
+            kpis=kpis,
             timeline=result.get("timeline", []),
             status="completed"
         )
-        
+
+        # Build comparison with baseline if available
+        comparison = None
+        baseline_kpis = project.get("baseline_kpis")
+        if baseline_kpis:
+            comparison = {
+                "baseline": baseline_kpis,
+                "scenario": city_kpis,
+                "delta": {
+                    "avg_wait_time": city_kpis.get("avg_wait_time", 0) - baseline_kpis.get("avg_wait_time", 0),
+                    "lost_swaps_pct": city_kpis.get("lost_swaps_pct", 0) - baseline_kpis.get("lost_swaps_pct", 0),
+                    "charger_utilization": city_kpis.get("charger_utilization", 0) - baseline_kpis.get("charger_utilization", 0),
+                    "throughput": city_kpis.get("throughput", 0) - baseline_kpis.get("throughput", 0),
+                    "idle_inventory_pct": city_kpis.get("idle_inventory_pct", 0) - baseline_kpis.get("idle_inventory_pct", 0),
+                    "cost_proxy": city_kpis.get("cost_proxy", 0) - baseline_kpis.get("cost_proxy", 0),
+                },
+            }
+
         return SimulationRunResponse(
             scenario_id=scenario_id,
             status="completed",
-            kpis=result.get("kpis"),
+            kpis=kpis,
             timeline=result.get("timeline"),
-            error=None
+            error=None,
+            comparison=comparison
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
         traceback.print_exc()
-        
+
         # Mark scenario as failed
         try:
             update_scenario_result(
@@ -428,13 +470,95 @@ async def run_scenario_simulation(
             )
         except:
             pass
-        
+
         return SimulationRunResponse(
             scenario_id=scenario_id,
             status="failed",
             kpis=None,
             timeline=None,
             error=str(e)
+        )
+
+
+@app.post("/projects/{project_id}/run-baseline", response_model=BaselineRunResponse)
+async def run_baseline_simulation(
+    project_id: str,
+    user: Dict[str, str] = Depends(require_role("admin", "analyst"))
+):
+    """
+    Run baseline simulation and store KPIs in project.
+    This establishes the 'before' state for comparison.
+    """
+    try:
+        # Get project
+        project = get_project(project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project '{project_id}' not found"
+            )
+
+        baseline_config = project.get("baseline_config")
+        if not baseline_config:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Project has no baseline configuration"
+            )
+
+        # Get stations from DB or fallback to baseline_config
+        stations = get_stations(project_id)
+        if not stations and baseline_config.get("stations"):
+            stations = [
+                {
+                    "id": f"baseline-{i}",
+                    "project_id": project_id,
+                    "station_id": s["station_id"],
+                    "name": f"{s.get('tier', 'Standard').capitalize()} Tier Station",
+                    "latitude": s["lat"],
+                    "longitude": s["lon"],
+                    "chargers": s["chargers"],
+                    "inventory_cap": s["inventory_capacity"],
+                    "active": True,
+                }
+                for i, s in enumerate(baseline_config["stations"])
+            ]
+
+        # Create a baseline scenario (no interventions)
+        baseline_scenario = {
+            "name": "Baseline",
+            "description": "Baseline simulation with no interventions",
+            "interventions": [],
+            "duration_hours": 24
+        }
+
+        # Run simulation
+        result = run_simulation(baseline_scenario, project, stations)
+
+        # Sanitize KPIs for JSON
+        city_kpis = sanitize_for_json(
+            result.get("kpis", {}).get("city_kpis", {}))
+
+        # Store baseline KPIs in project
+        supabase = get_supabase()
+        supabase.table("projects").update({
+            "baseline_kpis": city_kpis,
+            "baseline_valid": True,
+            "updated_at": "now()"
+        }).eq("id", project_id).execute()
+
+        return BaselineRunResponse(
+            status="completed",
+            baseline_kpis=city_kpis,
+            message="Baseline KPIs established successfully"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Baseline simulation failed: {str(e)}"
         )
 
 
@@ -461,13 +585,13 @@ async def run_scenario_simulation(
 #             }) \
 #             .eq("id", project_id) \
 #             .execute()
-#         
+#
 #         if not response.data:
 #             raise HTTPException(
 #                 status_code=status.HTTP_404_NOT_FOUND,
 #                 detail=f"Project '{project_id}' not found"
 #             )
-#         
+#
 #         return {"status": "success", "message": "Baseline config saved"}
 #     except HTTPException:
 #         raise
@@ -476,7 +600,6 @@ async def run_scenario_simulation(
 #             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
 #             detail=f"Failed to save baseline config: {str(e)}"
 #         )
-
 
 
 # DISABLED: Since baseline_config is now fixed to baseline_example.yaml,
@@ -496,9 +619,9 @@ async def run_scenario_simulation(
 #                 status_code=status.HTTP_404_NOT_FOUND,
 #                 detail=f"Project '{project_id}' not found"
 #             )
-#         
+#
 #         stations = get_stations(project_id)
-#         
+#
 #         # Create a dummy scenario with no interventions
 #         baseline_scenario = {
 #             "name": "Baseline Validation",
@@ -506,17 +629,17 @@ async def run_scenario_simulation(
 #             "interventions": [],
 #             "duration_hours": 24
 #         }
-#         
+#
 #         # Run simulation
 #         result = run_simulation(baseline_scenario, project, stations)
-#         
+#
 #         # === FIX: Sanitize the KPIs before processing ===
 #         kpis = sanitize_for_json(result.get("kpis", {}))
-#         
+#
 #         # Load reference KPIs for validation
 #         from pathlib import Path
 #         reference_path = Path("validation/reference_kpis.yaml")
-#         
+#
 #         if reference_path.exists():
 #             ref_kpis = BaselineValidator.load_reference_kpis(reference_path)
 #             passed, report = BaselineValidator.validate(kpis, ref_kpis)
@@ -535,11 +658,11 @@ async def run_scenario_simulation(
 #                 }
 #             }
 #             passed = True
-#             
+#
 #         # === FIX: Sanitize the report before saving ===
 #         report = sanitize_for_json(report)
 #         passed = bool(passed) # Force native boolean
-#         
+#
 #         # Save validation result to database
 #         supabase = get_supabase()
 #         supabase.table("validation_results").insert({
@@ -550,14 +673,14 @@ async def run_scenario_simulation(
 #             "per_station": report.get("per_station", {}),
 #             "passed": passed
 #         }).execute()
-#         
+#
 #         # Update project's baseline_valid flag and baseline_kpis
 #         supabase.table("projects").update({
 #             "baseline_valid": passed,
 #             "baseline_kpis": kpis, # Sanitize applied above
 #             "updated_at": "now()"
 #         }).eq("id", project_id).execute()
-#         
+#
 #         return BaselineValidationResponse(
 #             r_squared=report.get("r_squared", 0.0),
 #             mape=report.get("mape", 0.0),
@@ -566,7 +689,7 @@ async def run_scenario_simulation(
 #             per_station=report.get("per_station"),
 #             thresholds=report.get("thresholds")
 #         )
-#         
+#
 #     except HTTPException:
 #         raise
 #     except Exception as e:
@@ -664,16 +787,16 @@ async def run_comparison_simulation(data: dict):
     try:
         baseline_data = data.get("baseline")
         scenario_data = data.get("scenario")
-        
+
         if not baseline_data or not scenario_data:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Request must include 'baseline' and 'scenario' objects"
             )
-            
+
         baseline = BaselineConfig(**baseline_data)
         scenario = ScenarioConfig(**scenario_data)
-        
+
         return SimulationService.run_comparison(baseline, scenario)
     except HTTPException:
         raise
@@ -689,7 +812,8 @@ async def run_comparison_simulation(data: dict):
 async def optimize_network(config: BaselineConfig):
     try:
         response = SimulationService.run_baseline(config)
-        suggestions = SimulationService.generate_optimization_suggestions(response.kpis)
+        suggestions = SimulationService.generate_optimization_suggestions(
+            response.kpis)
         return OptimizationResponse(suggestions=suggestions)
     except Exception as e:
         traceback.print_exc()

@@ -6,6 +6,7 @@ interface ScenariosState {
   currentScenario: Scenario | null;
   simulationResult: SimulationResult | null;
   pendingInterventions: InterventionItem[];
+  activeInterventions: InterventionItem[]; // Interventions used in last simulation
   loading: boolean;
   running: boolean;
   error: string | null;
@@ -16,6 +17,7 @@ const initialState: ScenariosState = {
   currentScenario: null,
   simulationResult: null,
   pendingInterventions: [],
+  activeInterventions: [],
   loading: false,
   running: false,
   error: null,
@@ -53,7 +55,15 @@ const scenariosSlice = createSlice({
       state.pendingInterventions.splice(action.payload, 1);
     },
     clearPendingInterventions: (state) => {
-      state.pendingInterventions = [];
+      // Only move pending to active if there are pending interventions
+      // This preserves active interventions when re-running without new ones
+      if (state.pendingInterventions.length > 0) {
+        state.activeInterventions = [...state.pendingInterventions];
+        state.pendingInterventions = [];
+      }
+    },
+    clearActiveInterventions: (state) => {
+      state.activeInterventions = [];
     },
     setScenariosLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
@@ -71,6 +81,7 @@ const scenariosSlice = createSlice({
       state.currentScenario = null;
       state.simulationResult = null;
       state.pendingInterventions = [];
+      state.activeInterventions = [];
       state.loading = false;
       state.running = false;
       state.error = null;
@@ -86,6 +97,7 @@ export const {
   addPendingIntervention,
   removePendingIntervention,
   clearPendingInterventions,
+  clearActiveInterventions,
   setScenariosLoading,
   setSimulationRunning,
   setScenariosError,

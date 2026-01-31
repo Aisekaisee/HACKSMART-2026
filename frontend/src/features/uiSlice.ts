@@ -1,5 +1,10 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
+interface PickedLocation {
+  lat: number;
+  lng: number;
+}
+
 interface UIState {
   selectedStationId: string | null;
   currentTimelineFrame: number;
@@ -13,6 +18,10 @@ interface UIState {
     left: boolean;
     right: boolean;
   };
+  // Location picking state
+  isPickingLocation: boolean;
+  pickingForModal: "addStation" | "editStation" | null;
+  pickedLocation: PickedLocation | null;
 }
 
 const initialState: UIState = {
@@ -28,6 +37,9 @@ const initialState: UIState = {
     left: false,
     right: false,
   },
+  isPickingLocation: false,
+  pickingForModal: null,
+  pickedLocation: null,
 };
 
 const uiSlice = createSlice({
@@ -58,10 +70,44 @@ const uiSlice = createSlice({
       state.sidebarCollapsed[action.payload] =
         !state.sidebarCollapsed[action.payload];
     },
+    // Location picking actions
+    startLocationPicking: (
+      state,
+      action: PayloadAction<"addStation" | "editStation">,
+    ) => {
+      state.isPickingLocation = true;
+      state.pickingForModal = action.payload;
+      state.pickedLocation = null;
+      // Close the modal while picking
+      state.modals[action.payload] = false;
+    },
+    setPickedLocation: (state, action: PayloadAction<PickedLocation>) => {
+      state.pickedLocation = action.payload;
+      state.isPickingLocation = false;
+      // Reopen the modal
+      if (state.pickingForModal) {
+        state.modals[state.pickingForModal] = true;
+      }
+    },
+    cancelLocationPicking: (state) => {
+      state.isPickingLocation = false;
+      // Reopen the modal without setting location
+      if (state.pickingForModal) {
+        state.modals[state.pickingForModal] = true;
+      }
+      state.pickingForModal = null;
+    },
+    clearPickedLocation: (state) => {
+      state.pickedLocation = null;
+      state.pickingForModal = null;
+    },
     resetUI: (state) => {
       state.selectedStationId = null;
       state.currentTimelineFrame = 0;
       state.modals = initialState.modals;
+      state.isPickingLocation = false;
+      state.pickingForModal = null;
+      state.pickedLocation = null;
     },
   },
 });
@@ -73,6 +119,10 @@ export const {
   closeModal,
   closeAllModals,
   toggleSidebar,
+  startLocationPicking,
+  setPickedLocation,
+  cancelLocationPicking,
+  clearPickedLocation,
   resetUI,
 } = uiSlice.actions;
 export default uiSlice.reducer;

@@ -20,10 +20,29 @@ export interface AuthState {
 }
 
 // Project Types
+export interface BaselineStation {
+  station_id: string;
+  tier: string;
+  lat: number;
+  lon: number;
+  chargers: number;
+  inventory_capacity: number;
+  initial_charged?: number;
+}
+
+export interface BaselineConfig {
+  stations?: BaselineStation[];
+  demand?: object;
+  operations?: object;
+  simulation_duration?: number;
+  random_seed?: number;
+}
+
 export interface Project {
   id: string;
   name: string;
   description?: string;
+  baseline_config?: BaselineConfig;
   baseline_valid: boolean;
   baseline_kpis?: CityKPI;
   created_at: string;
@@ -42,6 +61,8 @@ export interface ProjectUpdate {
 }
 
 // Station Types
+export type StationTier = "high" | "medium" | "low";
+
 export interface Station {
   id: string;
   project_id: string;
@@ -50,11 +71,12 @@ export interface Station {
   latitude: number;
   longitude: number;
   chargers: number;
-  bays: number;
   inventory_cap: number;
+  tier?: StationTier;
   active: boolean;
   created_at: string;
   updated_at: string;
+  isBaseline?: boolean; // True if loaded from baseline_config (not persisted to DB)
 }
 
 export interface StationCreate {
@@ -63,8 +85,8 @@ export interface StationCreate {
   latitude: number;
   longitude: number;
   chargers?: number;
-  bays?: number;
   inventory_cap?: number;
+  tier?: StationTier;
 }
 
 export interface StationUpdate {
@@ -73,8 +95,8 @@ export interface StationUpdate {
   latitude?: number;
   longitude?: number;
   chargers?: number;
-  bays?: number;
   inventory_cap?: number;
+  tier?: StationTier;
   active?: boolean;
 }
 
@@ -156,12 +178,27 @@ export interface TimelineFrame {
   >;
 }
 
+// KPI Comparison (baseline vs scenario)
+export interface KPIComparison {
+  baseline: CityKPI;
+  scenario: CityKPI;
+  delta: {
+    avg_wait_time: number;
+    lost_swaps_pct: number;
+    charger_utilization: number;
+    throughput: number;
+    idle_inventory_pct: number;
+    cost_proxy: number;
+  };
+}
+
 export interface SimulationResult {
   scenario_id: string;
   status: "running" | "completed" | "failed";
   kpis?: SimulationKPIs;
   timeline?: TimelineFrame[];
   error?: string;
+  comparison?: KPIComparison | null;
 }
 
 // API Error

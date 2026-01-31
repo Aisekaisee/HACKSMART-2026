@@ -37,10 +37,21 @@ export default function RemoveStationModal({
   const [loading, setLoading] = useState(false);
   const [selectedStationId, setSelectedStationId] = useState<string>("");
 
+  // Filter out baseline stations (not deletable)
+  const deletableStations = stations.filter(
+    (s) => !s.id.startsWith("baseline-") && !s.isBaseline,
+  );
+
   const selectedStation = stations.find((s) => s.id === selectedStationId);
 
   const handleRemove = async () => {
     if (!projectId || !selectedStationId) return;
+
+    // Guard against baseline stations
+    if (selectedStationId.startsWith("baseline-")) {
+      toast.error("Cannot remove baseline stations. They are read-only.");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -82,15 +93,25 @@ export default function RemoveStationModal({
                 <SelectValue placeholder="Choose a station..." />
               </SelectTrigger>
               <SelectContent className="bg-slate-800 border-slate-700">
-                {stations.map((station) => (
-                  <SelectItem
-                    key={station.id}
-                    value={station.id}
-                    className="text-slate-300"
-                  >
-                    {station.station_id} - {station.name || "Unnamed"}
-                  </SelectItem>
-                ))}
+                {deletableStations.length === 0 ? (
+                  <div className="px-2 py-3 text-sm text-slate-500 text-center">
+                    No removable stations.
+                    <br />
+                    <span className="text-xs">
+                      Baseline stations are read-only.
+                    </span>
+                  </div>
+                ) : (
+                  deletableStations.map((station) => (
+                    <SelectItem
+                      key={station.id}
+                      value={station.id}
+                      className="text-slate-300"
+                    >
+                      {station.station_id} - {station.name || "Unnamed"}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>

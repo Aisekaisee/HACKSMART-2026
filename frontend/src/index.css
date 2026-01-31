@@ -149,6 +149,31 @@
 /* Leaflet map overrides for dark theme */
 .leaflet-container {
   background: hsl(var(--background));
+  z-index: 0;
+}
+
+/* Crosshair cursor for location picking mode */
+.leaflet-container.cursor-crosshair,
+.leaflet-container.cursor-crosshair .leaflet-interactive,
+.leaflet-container.cursor-crosshair .leaflet-grab,
+.leaflet-container.cursor-crosshair .leaflet-dragging {
+  cursor: crosshair !important;
+}
+
+/* Ensure dialogs appear above everything */
+[data-slot="dialog-overlay"],
+[data-slot="dialog-content"] {
+  z-index: 100 !important;
+}
+
+/* Ensure select dropdowns appear above dialogs */
+[data-slot="select-content"] {
+  z-index: 200 !important;
+}
+
+/* Ensure dropdown menus appear above dialogs */
+[data-slot="dropdown-menu-content"] {
+  z-index: 200 !important;
 }
 
 @layer base {

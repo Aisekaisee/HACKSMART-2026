@@ -45,15 +45,61 @@ export default function SimulationPage() {
 
       try {
         // Fetch project, stations, and scenarios in parallel
-        const [project, stations, scenarios] = await Promise.all([
+        const [project, dbStations, scenarios] = await Promise.all([
           api.projects.get(projectId),
           api.stations.list(projectId),
           api.scenarios.list(projectId),
         ]);
 
         dispatch(setCurrentProject(project));
-        dispatch(setStations(stations));
         dispatch(setScenarios(scenarios));
+
+        // If no stations in DB, sync baseline_config stations to database
+        if (dbStations.length === 0 && project.baseline_config?.stations) {
+          toast.info("Syncing baseline stations to database...");
+
+          try {
+            // Create all baseline stations in database
+            const createdStations = await Promise.all(
+              project.baseline_config.stations.map((s) =>
+                api.stations.create(projectId, {
+                  station_id: s.station_id,
+                  name: `${s.tier.charAt(0).toUpperCase() + s.tier.slice(1)} Tier Station`,
+                  latitude: s.lat,
+                  longitude: s.lon,
+                  chargers: s.chargers,
+                  inventory_cap: s.inventory_capacity,
+                }),
+              ),
+            );
+            dispatch(setStations(createdStations));
+            toast.success(`Synced ${createdStations.length} baseline stations`);
+          } catch (syncError) {
+            // If sync fails, show stations as read-only baseline stations
+            console.warn("Failed to sync baseline stations:", syncError);
+            const baselineStations = project.baseline_config.stations.map(
+              (s, index) => ({
+                id: `baseline-${index}`,
+                project_id: projectId,
+                station_id: s.station_id,
+                name: `${s.tier.charAt(0).toUpperCase() + s.tier.slice(1)} Tier Station`,
+                latitude: s.lat,
+                longitude: s.lon,
+                chargers: s.chargers,
+                bays: s.inventory_capacity,
+                inventory_cap: s.inventory_capacity,
+                active: true,
+                created_at: project.created_at,
+                updated_at: project.updated_at,
+                isBaseline: true, // Mark as read-only
+              }),
+            );
+            dispatch(setStations(baselineStations));
+            toast.warning("Baseline stations loaded (read-only mode)");
+          }
+        } else {
+          dispatch(setStations(dbStations));
+        }
       } catch (error) {
         toast.error(
           error instanceof Error ? error.message : "Failed to load project",

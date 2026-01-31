@@ -224,17 +224,11 @@ export default function RightSidebar() {
                     )}
                   </CardHeader>
                   <CardContent className="px-4 pb-4">
-                    <div className="grid grid-cols-3 gap-3 text-sm">
+                    <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
                         <span className="text-slate-500 text-xs">Chargers</span>
                         <p className="text-slate-200 font-medium">
                           {selectedStation.chargers}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 text-xs">Bays</span>
-                        <p className="text-slate-200 font-medium">
-                          {selectedStation.bays}
                         </p>
                       </div>
                       <div>

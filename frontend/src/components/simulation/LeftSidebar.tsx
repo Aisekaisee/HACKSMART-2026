@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/store";
-import { openModal } from "@/features/uiSlice";
+import { openModal, closeModal } from "@/features/uiSlice";
+import { setCurrentProject } from "@/features/projectsSlice";
 import {
   addPendingIntervention,
   removePendingIntervention,
@@ -41,6 +42,8 @@ import {
   Loader2,
   X,
   ChevronDown,
+  Zap,
+  CheckCircle2,
 } from "lucide-react";
 import AddStationModal from "./AddStationModal";
 import EditStationModal from "./EditStationModal";
@@ -55,12 +58,30 @@ export default function LeftSidebar() {
   const { pendingInterventions, running } = useAppSelector(
     (state) => state.scenarios,
   );
+  const { currentProject } = useAppSelector((state) => state.projects);
   const modals = useAppSelector((state) => state.ui.modals);
+  const { pickedLocation, pickingForModal, isPickingLocation } = useAppSelector(
+    (state) => state.ui,
+  );
 
   const [duration, setDuration] = useState("24");
+  const [runningBaseline, setRunningBaseline] = useState(false);
   const [showInterventionForm, setShowInterventionForm] = useState(false);
   const [interventionType, setInterventionType] =
     useState<InterventionType | null>(null);
+
+  const hasBaselineKPIs = !!currentProject?.baseline_kpis;
+
+  // Reopen modal after location is picked
+  useEffect(() => {
+    if (pickedLocation && !isPickingLocation) {
+      if (pickingForModal === "addStation") {
+        dispatch(openModal("addStation"));
+      } else if (pickingForModal === "editStation") {
+        dispatch(openModal("editStation"));
+      }
+    }
+  }, [pickedLocation, pickingForModal, isPickingLocation, dispatch]);
 
   const handleAddIntervention = (type: InterventionType) => {
     setInterventionType(type);
@@ -72,6 +93,32 @@ export default function LeftSidebar() {
     setShowInterventionForm(false);
     setInterventionType(null);
     toast.success("Intervention added");
+  };
+
+  const handleRunBaseline = async () => {
+    if (!projectId) return;
+
+    setRunningBaseline(true);
+    try {
+      const result = await api.projects.runBaseline(projectId);
+      // Update the current project with baseline KPIs
+      if (currentProject) {
+        dispatch(
+          setCurrentProject({
+            ...currentProject,
+            baseline_kpis: result.baseline_kpis,
+          }),
+        );
+      }
+      toast.success(
+        "Baseline simulation completed! You can now run scenarios to compare.",
+      );
+    } catch (error) {
+      console.error("Baseline simulation failed:", error);
+      toast.error("Failed to run baseline simulation");
+    } finally {
+      setRunningBaseline(false);
+    }
   };
 
   const handleRunSimulation = async () => {
@@ -90,11 +137,20 @@ export default function LeftSidebar() {
 
       // Run the simulation
       const result = await api.scenarios.run(projectId, scenario.id);
+
+      // Check if simulation failed
+      if (result.status === "failed") {
+        toast.error(result.error || "Simulation failed");
+        dispatch(setSimulationRunning(false));
+        return;
+      }
+
       dispatch(setSimulationResult(result));
       dispatch(clearPendingInterventions());
       toast.success("Simulation completed!");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Simulation failed");
+    } finally {
       dispatch(setSimulationRunning(false));
     }
   };
@@ -130,6 +186,16 @@ export default function LeftSidebar() {
               configured
             </div>
 
+            {/* Baseline stations warning */}
+            {stations.some(
+              (s) => s.id.startsWith("baseline-") || s.isBaseline,
+            ) && (
+              <div className="text-xs text-amber-400/90 bg-amber-400/10 p-2 rounded border border-amber-400/20">
+                ⚠️ Baseline stations (read-only). Add new stations to
+                edit/remove.
+              </div>
+            )}
+
             {/* Station list - scrollable */}
             {stations.length > 0 && (
               <div className="max-h-32 overflow-y-auto space-y-1">
@@ -138,7 +204,18 @@ export default function LeftSidebar() {
                     key={station.id}
                     className="text-xs text-slate-500 py-1 px-2 rounded bg-slate-800/50 flex justify-between items-center"
                   >
-                    <span>{station.station_id}</span>
+                    <span className="flex items-center gap-1">
+                      {station.station_id}
+                      {(station.id.startsWith("baseline-") ||
+                        station.isBaseline) && (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] px-1 py-0 h-4 border-amber-400/50 text-amber-400/80"
+                        >
+                          baseline
+                        </Badge>
+                      )}
+                    </span>
                     <span className="text-slate-600">
                       ({station.latitude.toFixed(2)},{" "}
                       {station.longitude.toFixed(2)})
@@ -322,6 +399,52 @@ export default function LeftSidebar() {
               </Select>
             </div>
 
+            {/* Baseline Status & Run */}
+            <div className="p-3 bg-slate-900/50 rounded-lg border border-slate-700 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-400">Baseline Status</span>
+                {hasBaselineKPIs ? (
+                  <Badge
+                    variant="outline"
+                    className="bg-green-900/30 text-green-400 border-green-700"
+                  >
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Ready
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className="bg-yellow-900/30 text-yellow-400 border-yellow-700"
+                  >
+                    Not Run
+                  </Badge>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                className="w-full border-slate-600 text-slate-300 hover:bg-slate-700"
+                onClick={handleRunBaseline}
+                disabled={runningBaseline || stations.length === 0}
+              >
+                {runningBaseline ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Running Baseline...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="h-4 w-4 mr-2" />
+                    {hasBaselineKPIs ? "Re-run Baseline" : "Run Baseline"}
+                  </>
+                )}
+              </Button>
+              <p className="text-xs text-slate-500">
+                Run baseline first to enable comparison with scenarios
+              </p>
+            </div>
+
+            <Separator className="bg-slate-700" />
+
             <Button
               className="w-full bg-blue-600 hover:bg-blue-700"
               onClick={handleRunSimulation}
@@ -335,7 +458,7 @@ export default function LeftSidebar() {
               ) : (
                 <>
                   <Play className="h-4 w-4 mr-2" />
-                  Run Simulation
+                  Run Scenario Simulation
                 </>
               )}
             </Button>
@@ -353,25 +476,21 @@ export default function LeftSidebar() {
       <AddStationModal
         open={modals.addStation}
         onOpenChange={(open: boolean) =>
-          open
-            ? dispatch(openModal("addStation"))
-            : dispatch({ type: "ui/closeModal", payload: "addStation" })
+          dispatch(open ? openModal("addStation") : closeModal("addStation"))
         }
       />
       <EditStationModal
         open={modals.editStation}
         onOpenChange={(open: boolean) =>
-          open
-            ? dispatch(openModal("editStation"))
-            : dispatch({ type: "ui/closeModal", payload: "editStation" })
+          dispatch(open ? openModal("editStation") : closeModal("editStation"))
         }
       />
       <RemoveStationModal
         open={modals.removeStation}
         onOpenChange={(open: boolean) =>
-          open
-            ? dispatch(openModal("removeStation"))
-            : dispatch({ type: "ui/closeModal", payload: "removeStation" })
+          dispatch(
+            open ? openModal("removeStation") : closeModal("removeStation"),
+          )
         }
       />
     </aside>

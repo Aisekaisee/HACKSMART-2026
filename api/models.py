@@ -10,7 +10,8 @@ from pydantic import BaseModel, Field
 class SignUpRequest(BaseModel):
     """Request model for user signup."""
     email: str = Field(..., description="User email address")
-    password: str = Field(..., min_length=6, description="Password (min 6 characters)")
+    password: str = Field(..., min_length=6,
+                          description="Password (min 6 characters)")
 
 
 class LoginRequest(BaseModel):
@@ -66,8 +67,9 @@ class StationCreate(BaseModel):
     latitude: float = Field(..., ge=-90, le=90)
     longitude: float = Field(..., ge=-180, le=180)
     chargers: int = Field(default=5, ge=1, le=50)
-    bays: int = Field(default=50, ge=1, le=500)
     inventory_cap: int = Field(default=100, ge=1)
+    tier: Optional[str] = Field(default=None, pattern="^(high|medium|low)$",
+                                description="Station tier: high, medium, or low. If not provided, computed from chargers.")
 
 
 class StationUpdate(BaseModel):
@@ -77,8 +79,8 @@ class StationUpdate(BaseModel):
     latitude: Optional[float] = Field(None, ge=-90, le=90)
     longitude: Optional[float] = Field(None, ge=-180, le=180)
     chargers: Optional[int] = Field(None, ge=1, le=50)
-    bays: Optional[int] = Field(None, ge=1, le=500)
     inventory_cap: Optional[int] = Field(None, ge=1)
+    tier: Optional[str] = Field(None, pattern="^(high|medium|low)$")
     active: Optional[bool] = None
 
 
@@ -91,8 +93,8 @@ class StationOut(BaseModel):
     latitude: float
     longitude: float
     chargers: int
-    bays: int
     inventory_cap: int
+    tier: Optional[str] = None
     active: bool = True
     created_at: datetime
     updated_at: datetime
@@ -105,7 +107,8 @@ class StationOut(BaseModel):
 class InterventionItem(BaseModel):
     """A single intervention in a scenario."""
     type: str = Field(..., description="Intervention type: weather_demand, event_demand, replenishment_policy, etc.")
-    params: Dict[str, Any] = Field(default_factory=dict, description="Type-specific parameters")
+    params: Dict[str, Any] = Field(
+        default_factory=dict, description="Type-specific parameters")
 
 
 class ScenarioCreate(BaseModel):
@@ -149,6 +152,15 @@ class SimulationRunResponse(BaseModel):
     kpis: Optional[Dict[str, Any]] = None
     timeline: Optional[List[Dict[str, Any]]] = None
     error: Optional[str] = None
+    # Comparison with baseline KPIs
+    comparison: Optional[Dict[str, Any]] = None
+
+
+class BaselineRunResponse(BaseModel):
+    """Response model for baseline simulation run."""
+    status: str
+    baseline_kpis: Dict[str, Any]
+    message: str
 
 
 # ============================================================
@@ -332,7 +344,8 @@ class ScenarioCreateResponse(BaseModel):
 class OptimizationSuggestion(BaseModel):
     """A single optimization suggestion."""
     station_id: Optional[str] = None
-    type: str = Field(..., description="add_chargers, add_bays, add_station, remove_station")
+    type: str = Field(...,
+                      description="add_chargers, add_station, remove_station")
     description: str
     priority: str = Field(..., pattern="^(high|medium|low)$")
     action_payload: Dict[str, Any] = {}
