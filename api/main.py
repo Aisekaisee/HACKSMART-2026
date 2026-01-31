@@ -442,134 +442,139 @@ async def run_scenario_simulation(
 # BASELINE ROUTES
 # ============================================================
 
-@app.post("/projects/{project_id}/baseline-config")
-async def save_baseline_config(
-    project_id: str,
-    config: Dict[str, Any],
-    user: Dict[str, str] = Depends(require_role("admin", "analyst"))
-):
-    """Save baseline config for a project (admin/analyst only)."""
-    try:
-        supabase = get_supabase()
-        response = supabase.table("projects") \
-            .update({
-                "baseline_config": config,
-                "updated_at": "now()"
-            }) \
-            .eq("id", project_id) \
-            .execute()
-        
-        if not response.data:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Project '{project_id}' not found"
-            )
-        
-        return {"status": "success", "message": "Baseline config saved"}
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to save baseline config: {str(e)}"
-        )
+# DISABLED: Projects now use baseline_example.yaml as default config automatically
+# Users cannot override the baseline config - all scenarios compare against the default
+#
+# @app.post("/projects/{project_id}/baseline-config")
+# async def save_baseline_config(
+#     project_id: str,
+#     config: Dict[str, Any],
+#     user: Dict[str, str] = Depends(require_role("admin", "analyst"))
+# ):
+#     """Save baseline config for a project (admin/analyst only)."""
+#     try:
+#         supabase = get_supabase()
+#         response = supabase.table("projects") \
+#             .update({
+#                 "baseline_config": config,
+#                 "updated_at": "now()"
+#             }) \
+#             .eq("id", project_id) \
+#             .execute()
+#         
+#         if not response.data:
+#             raise HTTPException(
+#                 status_code=status.HTTP_404_NOT_FOUND,
+#                 detail=f"Project '{project_id}' not found"
+#             )
+#         
+#         return {"status": "success", "message": "Baseline config saved"}
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=f"Failed to save baseline config: {str(e)}"
+#         )
 
 
 
-
-@app.post("/projects/{project_id}/validate-baseline", response_model=BaselineValidationResponse)
-async def validate_baseline(
-    project_id: str,
-    user: Dict[str, str] = Depends(require_role("admin", "analyst"))
-):
-    """Run baseline simulation and validate (admin/analyst only)."""
-    try:
-        # Fetch project and stations
-        project = get_project(project_id)
-        if not project:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Project '{project_id}' not found"
-            )
-        
-        stations = get_stations(project_id)
-        
-        # Create a dummy scenario with no interventions
-        baseline_scenario = {
-            "name": "Baseline Validation",
-            "description": "Auto-generated for validation",
-            "interventions": [],
-            "duration_hours": 24
-        }
-        
-        # Run simulation
-        result = run_simulation(baseline_scenario, project, stations)
-        
-        # === FIX: Sanitize the KPIs before processing ===
-        kpis = sanitize_for_json(result.get("kpis", {}))
-        
-        # Load reference KPIs for validation
-        from pathlib import Path
-        reference_path = Path("validation/reference_kpis.yaml")
-        
-        if reference_path.exists():
-            ref_kpis = BaselineValidator.load_reference_kpis(reference_path)
-            passed, report = BaselineValidator.validate(kpis, ref_kpis)
-        else:
-            # No reference file, assume validation passes
-            report = {
-                "r_squared": 1.0,
-                "mape": 0.0,
-                "rmse": 0.0,
-                "passed": True,
-                "per_station": {},
-                "thresholds": {
-                    "mape_max": 10.0,
-                    "wait_time_tolerance_pct": 15.0,
-                    "lost_swaps_tolerance_pct": 20.0
-                }
-            }
-            passed = True
-            
-        # === FIX: Sanitize the report before saving ===
-        report = sanitize_for_json(report)
-        passed = bool(passed) # Force native boolean
-        
-        # Save validation result to database
-        supabase = get_supabase()
-        supabase.table("validation_results").insert({
-            "project_id": project_id,
-            "r_squared": report.get("r_squared", 0.0),
-            "mape": report.get("mape", 0.0),
-            "rmse": report.get("rmse", 0.0),
-            "per_station": report.get("per_station", {}),
-            "passed": passed
-        }).execute()
-        
-        # Update project's baseline_valid flag and baseline_kpis
-        supabase.table("projects").update({
-            "baseline_valid": passed,
-            "baseline_kpis": kpis, # Sanitize applied above
-            "updated_at": "now()"
-        }).eq("id", project_id).execute()
-        
-        return BaselineValidationResponse(
-            r_squared=report.get("r_squared", 0.0),
-            mape=report.get("mape", 0.0),
-            rmse=report.get("rmse", 0.0),
-            passed=passed,
-            per_station=report.get("per_station"),
-            thresholds=report.get("thresholds")
-        )
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        traceback.print_exc()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Validation failed: {str(e)}"
-        )
+# DISABLED: Since baseline_config is now fixed to baseline_example.yaml,
+# validation would always produce the same result. Keeping for reference.
+#
+# @app.post("/projects/{project_id}/validate-baseline", response_model=BaselineValidationResponse)
+# async def validate_baseline(
+#     project_id: str,
+#     user: Dict[str, str] = Depends(require_role("admin", "analyst"))
+# ):
+#     """Run baseline simulation and validate (admin/analyst only)."""
+#     try:
+#         # Fetch project and stations
+#         project = get_project(project_id)
+#         if not project:
+#             raise HTTPException(
+#                 status_code=status.HTTP_404_NOT_FOUND,
+#                 detail=f"Project '{project_id}' not found"
+#             )
+#         
+#         stations = get_stations(project_id)
+#         
+#         # Create a dummy scenario with no interventions
+#         baseline_scenario = {
+#             "name": "Baseline Validation",
+#             "description": "Auto-generated for validation",
+#             "interventions": [],
+#             "duration_hours": 24
+#         }
+#         
+#         # Run simulation
+#         result = run_simulation(baseline_scenario, project, stations)
+#         
+#         # === FIX: Sanitize the KPIs before processing ===
+#         kpis = sanitize_for_json(result.get("kpis", {}))
+#         
+#         # Load reference KPIs for validation
+#         from pathlib import Path
+#         reference_path = Path("validation/reference_kpis.yaml")
+#         
+#         if reference_path.exists():
+#             ref_kpis = BaselineValidator.load_reference_kpis(reference_path)
+#             passed, report = BaselineValidator.validate(kpis, ref_kpis)
+#         else:
+#             # No reference file, assume validation passes
+#             report = {
+#                 "r_squared": 1.0,
+#                 "mape": 0.0,
+#                 "rmse": 0.0,
+#                 "passed": True,
+#                 "per_station": {},
+#                 "thresholds": {
+#                     "mape_max": 10.0,
+#                     "wait_time_tolerance_pct": 15.0,
+#                     "lost_swaps_tolerance_pct": 20.0
+#                 }
+#             }
+#             passed = True
+#             
+#         # === FIX: Sanitize the report before saving ===
+#         report = sanitize_for_json(report)
+#         passed = bool(passed) # Force native boolean
+#         
+#         # Save validation result to database
+#         supabase = get_supabase()
+#         supabase.table("validation_results").insert({
+#             "project_id": project_id,
+#             "r_squared": report.get("r_squared", 0.0),
+#             "mape": report.get("mape", 0.0),
+#             "rmse": report.get("rmse", 0.0),
+#             "per_station": report.get("per_station", {}),
+#             "passed": passed
+#         }).execute()
+#         
+#         # Update project's baseline_valid flag and baseline_kpis
+#         supabase.table("projects").update({
+#             "baseline_valid": passed,
+#             "baseline_kpis": kpis, # Sanitize applied above
+#             "updated_at": "now()"
+#         }).eq("id", project_id).execute()
+#         
+#         return BaselineValidationResponse(
+#             r_squared=report.get("r_squared", 0.0),
+#             mape=report.get("mape", 0.0),
+#             rmse=report.get("rmse", 0.0),
+#             passed=passed,
+#             per_station=report.get("per_station"),
+#             thresholds=report.get("thresholds")
+#         )
+#         
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         traceback.print_exc()
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=f"Validation failed: {str(e)}"
+#         )
 
 # ============================================================
 # LEGACY ROUTES (preserved for backward compatibility)

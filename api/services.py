@@ -27,13 +27,26 @@ CONFIG_DIR = Path("configs")
 # PROJECT SERVICES
 # ============================================================
 
+def load_default_baseline_config() -> Dict[str, Any]:
+    """Load the default baseline config from baseline_example.yaml."""
+    baseline_path = CONFIG_DIR / "baseline_example.yaml"
+    if baseline_path.exists():
+        with open(baseline_path, 'r') as f:
+            return yaml.safe_load(f)
+    return {}
+
+
 def create_project(owner_id: str, data: ProjectCreate) -> Dict[str, Any]:
-    """Create a new project."""
+    """Create a new project with default baseline config from baseline_example.yaml."""
     supabase = get_supabase()
+    
+    # Load default baseline config
+    default_config = load_default_baseline_config()
     
     insert_data = {
         "owner_id": owner_id,
         "name": data.name,
+        "baseline_config": default_config,  # Auto-set default baseline
     }
     if data.description:
         insert_data["description"] = data.description
