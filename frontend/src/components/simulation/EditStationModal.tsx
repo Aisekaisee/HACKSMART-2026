@@ -121,34 +121,30 @@ export default function EditStationModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-slate-900 border-slate-800 max-w-lg">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-white">Edit Station</DialogTitle>
+          <DialogTitle>Edit Station</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label className="text-slate-300">Select Station</Label>
+            <Label>Select Station</Label>
             <Select
               value={selectedStationId}
               onValueChange={setSelectedStationId}
             >
-              <SelectTrigger className="bg-slate-800 border-slate-700 text-slate-300">
+              <SelectTrigger>
                 <SelectValue placeholder="Choose a station..." />
               </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-700">
+              <SelectContent>
                 {editableStations.length === 0 ? (
-                  <div className="px-2 py-3 text-sm text-slate-500 text-center">
+                  <div className="px-2 py-3 text-sm text-muted-foreground text-center">
                     No editable stations available.
                     <br />
                     <span className="text-xs">Add a new station first.</span>
                   </div>
                 ) : (
                   editableStations.map((station) => (
-                    <SelectItem
-                      key={station.id}
-                      value={station.id}
-                      className="text-slate-300"
-                    >
+                    <SelectItem key={station.id} value={station.id}>
                       {station.station_id} - {station.name || "Unnamed"}
                     </SelectItem>
                   ))
@@ -161,29 +157,29 @@ export default function EditStationModal({
             <>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-slate-300">Station ID</Label>
+                  <Label>Station ID</Label>
                   <Input
                     value={formData.station_id || ""}
                     onChange={(e) => handleChange("station_id", e.target.value)}
-                    className="bg-slate-800 border-slate-700 text-white"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-slate-300">Name</Label>
+                  <Label>Name</Label>
                   <Input
                     value={formData.name || ""}
                     onChange={(e) => handleChange("name", e.target.value)}
-                    className="bg-slate-800 border-slate-700 text-white"
                   />
                 </div>
               </div>
 
               {/* Location Selection */}
               <div className="space-y-2">
-                <Label className="text-slate-300">Location</Label>
+                <Label>Location</Label>
                 <div className="grid grid-cols-5 gap-2">
                   <div className="col-span-2 space-y-1">
-                    <Label className="text-slate-400 text-xs">Latitude</Label>
+                    <Label className="text-xs text-muted-foreground">
+                      Latitude
+                    </Label>
                     <Input
                       type="number"
                       step="0.0001"
@@ -194,11 +190,12 @@ export default function EditStationModal({
                           parseFloat(e.target.value) || 0,
                         )
                       }
-                      className="bg-slate-800 border-slate-700 text-white"
                     />
                   </div>
                   <div className="col-span-2 space-y-1">
-                    <Label className="text-slate-400 text-xs">Longitude</Label>
+                    <Label className="text-xs text-muted-foreground">
+                      Longitude
+                    </Label>
                     <Input
                       type="number"
                       step="0.0001"
@@ -209,7 +206,6 @@ export default function EditStationModal({
                           parseFloat(e.target.value) || 0,
                         )
                       }
-                      className="bg-slate-800 border-slate-700 text-white"
                     />
                   </div>
                   <div className="col-span-1 flex items-end">
@@ -218,13 +214,13 @@ export default function EditStationModal({
                       variant="outline"
                       size="sm"
                       onClick={handlePickOnMap}
-                      className="w-full h-9 border-slate-600 bg-slate-800 hover:bg-slate-700 text-slate-300"
+                      className="w-full h-9"
                     >
                       <MapPin className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   Enter coordinates manually or click the map pin to pick on the
                   map
                 </p>
@@ -232,7 +228,7 @@ export default function EditStationModal({
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-slate-300">Chargers</Label>
+                  <Label>Chargers</Label>
                   <Input
                     type="number"
                     min="1"
@@ -241,11 +237,10 @@ export default function EditStationModal({
                     onChange={(e) =>
                       handleChange("chargers", parseInt(e.target.value) || 5)
                     }
-                    className="bg-slate-800 border-slate-700 text-white"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-slate-300">Inventory Capacity</Label>
+                  <Label>Inventory Capacity</Label>
                   <Input
                     type="number"
                     min="1"
@@ -256,36 +251,35 @@ export default function EditStationModal({
                         parseInt(e.target.value) || 100,
                       )
                     }
-                    className="bg-slate-800 border-slate-700 text-white"
                   />
                 </div>
               </div>
 
               {/* Tier Selection */}
               <div className="space-y-2">
-                <Label className="text-slate-300">Station Tier</Label>
+                <Label>Station Tier</Label>
                 <Select
                   value={formData.tier || "medium"}
                   onValueChange={(value) =>
                     handleChange("tier", value as StationTier)
                   }
                 >
-                  <SelectTrigger className="bg-slate-800 border-slate-700 text-slate-300">
+                  <SelectTrigger>
                     <SelectValue placeholder="Select tier..." />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-700">
-                    <SelectItem value="high" className="text-slate-300">
+                  <SelectContent>
+                    <SelectItem value="high">
                       🔴 High Tier - High demand (30+ swaps/hr)
                     </SelectItem>
-                    <SelectItem value="medium" className="text-slate-300">
+                    <SelectItem value="medium">
                       🟡 Medium Tier - Medium demand (20 swaps/hr)
                     </SelectItem>
-                    <SelectItem value="low" className="text-slate-300">
+                    <SelectItem value="low">
                       🟢 Low Tier - Low demand (10 swaps/hr)
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   Tier determines base demand rate for the station
                 </p>
               </div>
@@ -297,15 +291,10 @@ export default function EditStationModal({
               type="button"
               variant="ghost"
               onClick={() => onOpenChange(false)}
-              className="text-slate-400"
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              className="bg-blue-600 hover:bg-blue-700"
-              disabled={loading || !selectedStationId}
-            >
+            <Button type="submit" disabled={loading || !selectedStationId}>
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

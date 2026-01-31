@@ -26,18 +26,18 @@ export default function RightSidebar() {
   );
 
   return (
-    <aside className="w-96 border-l border-slate-800 bg-slate-900/50 flex flex-col overflow-hidden shrink-0">
+    <aside className="w-96 border-l border-border bg-background flex flex-col overflow-hidden shrink-0">
       <Tabs defaultValue="overview" className="flex flex-col h-full">
-        <TabsList className="bg-slate-800/50 border-b border-slate-700 rounded-none h-12 shrink-0">
+        <TabsList className="bg-card border-b border-border rounded-none h-12 shrink-0">
           <TabsTrigger
             value="overview"
-            className="flex-1 data-[state=active]:bg-slate-700"
+            className="flex-1 data-[state=active]:bg-secondary data-[state=active]:text-foreground"
           >
             Overview
           </TabsTrigger>
           <TabsTrigger
             value="station"
-            className="flex-1 data-[state=active]:bg-slate-700"
+            className="flex-1 data-[state=active]:bg-secondary data-[state=active]:text-foreground"
           >
             Station Detail
           </TabsTrigger>
@@ -48,9 +48,11 @@ export default function RightSidebar() {
           <TabsContent value="overview" className="p-4 m-0 space-y-4">
             {!simulationResult ? (
               <div className="text-center py-12">
-                <BarChart3 className="h-12 w-12 text-slate-600 mx-auto mb-4" />
-                <p className="text-slate-400">No simulation results yet</p>
-                <p className="text-slate-500 text-sm mt-1">
+                <BarChart3 className="h-12 w-12 text-muted mx-auto mb-4" />
+                <p className="text-muted-foreground">
+                  No simulation results yet
+                </p>
+                <p className="text-muted-foreground text-sm mt-1">
                   Run a simulation to see KPIs
                 </p>
               </div>
@@ -118,23 +120,27 @@ export default function RightSidebar() {
                 </div>
 
                 {/* Summary stats */}
-                <Card className="bg-slate-800/50 border-slate-700">
+                <Card className="bg-card border-border">
                   <CardHeader className="py-3 px-4">
-                    <CardTitle className="text-sm font-medium text-slate-300">
+                    <CardTitle className="text-sm font-medium text-foreground">
                       Summary
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="px-4 pb-4">
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
-                        <span className="text-slate-500">Total Arrivals</span>
-                        <p className="text-slate-200 font-medium">
+                        <span className="text-muted-foreground">
+                          Total Arrivals
+                        </span>
+                        <p className="text-foreground font-medium">
                           {cityKpis?.total_arrivals?.toLocaleString() || 0}
                         </p>
                       </div>
                       <div>
-                        <span className="text-slate-500">Lost Swaps</span>
-                        <p className="text-slate-200 font-medium">
+                        <span className="text-muted-foreground">
+                          Lost Swaps
+                        </span>
+                        <p className="text-foreground font-medium">
                           {cityKpis?.total_lost?.toLocaleString() || 0}
                         </p>
                       </div>
@@ -144,23 +150,23 @@ export default function RightSidebar() {
 
                 {/* Comparison table (if baseline exists) */}
                 {baselineKpis && (
-                  <Card className="bg-slate-800/50 border-slate-700">
+                  <Card className="bg-card border-border">
                     <CardHeader className="py-3 px-4">
-                      <CardTitle className="text-sm font-medium text-slate-300">
+                      <CardTitle className="text-sm font-medium text-foreground">
                         Baseline Comparison
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="px-4 pb-4">
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="text-slate-500">
+                          <tr className="text-muted-foreground">
                             <th className="text-left py-1">Metric</th>
                             <th className="text-right py-1">Baseline</th>
                             <th className="text-right py-1">Current</th>
                             <th className="text-right py-1">Change</th>
                           </tr>
                         </thead>
-                        <tbody className="text-slate-300">
+                        <tbody className="text-foreground">
                           <ComparisonRow
                             label="Wait Time"
                             baseline={baselineKpis.avg_wait_time}
@@ -195,30 +201,30 @@ export default function RightSidebar() {
           <TabsContent value="station" className="p-4 m-0">
             {!selectedStation ? (
               <div className="text-center py-12">
-                <p className="text-slate-400">No station selected</p>
-                <p className="text-slate-500 text-sm mt-1">
+                <p className="text-muted-foreground">No station selected</p>
+                <p className="text-muted-foreground text-sm mt-1">
                   Click a station on the map
                 </p>
               </div>
             ) : (
               <div className="space-y-4">
-                <Card className="bg-slate-800/50 border-slate-700">
+                <Card className="bg-card border-border">
                   <CardHeader className="py-3 px-4">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-medium text-white">
+                      <CardTitle className="text-sm font-medium text-foreground">
                         {selectedStation.station_id}
                       </CardTitle>
                       {selectedStationKpi?.tier && (
                         <Badge
                           variant="outline"
-                          className="border-blue-500/50 text-blue-400"
+                          className="border-primary/50 text-primary"
                         >
                           {selectedStationKpi.tier}
                         </Badge>
                       )}
                     </div>
                     {selectedStation.name && (
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-muted-foreground">
                         {selectedStation.name}
                       </p>
                     )}
@@ -226,14 +232,18 @@ export default function RightSidebar() {
                   <CardContent className="px-4 pb-4">
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
-                        <span className="text-slate-500 text-xs">Chargers</span>
-                        <p className="text-slate-200 font-medium">
+                        <span className="text-muted-foreground text-xs">
+                          Chargers
+                        </span>
+                        <p className="text-foreground font-medium">
                           {selectedStation.chargers}
                         </p>
                       </div>
                       <div>
-                        <span className="text-slate-500 text-xs">Capacity</span>
-                        <p className="text-slate-200 font-medium">
+                        <span className="text-muted-foreground text-xs">
+                          Capacity
+                        </span>
+                        <p className="text-foreground font-medium">
                           {selectedStation.inventory_cap}
                         </p>
                       </div>
@@ -242,52 +252,52 @@ export default function RightSidebar() {
                 </Card>
 
                 {selectedStationKpi && (
-                  <Card className="bg-slate-800/50 border-slate-700">
+                  <Card className="bg-card border-border">
                     <CardHeader className="py-3 px-4">
-                      <CardTitle className="text-sm font-medium text-slate-300">
+                      <CardTitle className="text-sm font-medium text-foreground">
                         Station KPIs
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="px-4 pb-4 space-y-3">
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
-                          <span className="text-slate-500 text-xs">
+                          <span className="text-muted-foreground text-xs">
                             Total Arrivals
                           </span>
-                          <p className="text-slate-200 font-medium">
+                          <p className="text-foreground font-medium">
                             {selectedStationKpi.total_arrivals.toLocaleString()}
                           </p>
                         </div>
                         <div>
-                          <span className="text-slate-500 text-xs">
+                          <span className="text-muted-foreground text-xs">
                             Successful Swaps
                           </span>
-                          <p className="text-slate-200 font-medium">
+                          <p className="text-foreground font-medium">
                             {selectedStationKpi.successful_swaps.toLocaleString()}
                           </p>
                         </div>
                         <div>
-                          <span className="text-slate-500 text-xs">
+                          <span className="text-muted-foreground text-xs">
                             Lost Swaps
                           </span>
-                          <p className="text-red-400 font-medium">
+                          <p className="text-destructive font-medium">
                             {selectedStationKpi.lost_swaps} (
                             {selectedStationKpi.lost_swaps_pct.toFixed(1)}%)
                           </p>
                         </div>
                         <div>
-                          <span className="text-slate-500 text-xs">
+                          <span className="text-muted-foreground text-xs">
                             Avg Wait Time
                           </span>
-                          <p className="text-slate-200 font-medium">
+                          <p className="text-foreground font-medium">
                             {selectedStationKpi.avg_wait_time.toFixed(1)} min
                           </p>
                         </div>
                         <div>
-                          <span className="text-slate-500 text-xs">
+                          <span className="text-muted-foreground text-xs">
                             Charger Util.
                           </span>
-                          <p className="text-slate-200 font-medium">
+                          <p className="text-foreground font-medium">
                             {(
                               selectedStationKpi.charger_utilization * 100
                             ).toFixed(1)}
@@ -295,10 +305,10 @@ export default function RightSidebar() {
                           </p>
                         </div>
                         <div>
-                          <span className="text-slate-500 text-xs">
+                          <span className="text-muted-foreground text-xs">
                             Avg Charged Inv.
                           </span>
-                          <p className="text-slate-200 font-medium">
+                          <p className="text-foreground font-medium">
                             {selectedStationKpi.avg_charged_inventory.toFixed(
                               1,
                             )}
@@ -342,20 +352,20 @@ function KPICard({
     : null;
 
   return (
-    <Card className="bg-slate-800/50 border-slate-700">
+    <Card className="bg-card border-border">
       <CardContent className="p-3">
-        <div className="flex items-center gap-2 text-slate-400 mb-1">
+        <div className="flex items-center gap-2 text-muted-foreground mb-1">
           {icon}
           <span className="text-xs">{title}</span>
         </div>
         <div className="flex items-baseline gap-1">
-          <span className="text-xl font-semibold text-white">{value}</span>
-          <span className="text-xs text-slate-500">{unit}</span>
+          <span className="text-xl font-semibold text-foreground">{value}</span>
+          <span className="text-xs text-muted-foreground">{unit}</span>
         </div>
         {change !== null && (
           <div
             className={`text-xs mt-1 ${
-              isImprovement ? "text-green-400" : "text-red-400"
+              isImprovement ? "text-primary" : "text-destructive"
             }`}
           >
             {change > 0 ? "+" : ""}
@@ -385,9 +395,9 @@ function ComparisonRow({
   const isImprovement = lowerIsBetter ? change < 0 : change > 0;
 
   return (
-    <tr className="border-t border-slate-700/50">
+    <tr className="border-t border-border">
       <td className="py-1.5">{label}</td>
-      <td className="text-right py-1.5 text-slate-500">
+      <td className="text-right py-1.5 text-muted-foreground">
         {baseline.toFixed(1)}
         {unit}
       </td>
@@ -397,7 +407,7 @@ function ComparisonRow({
       </td>
       <td
         className={`text-right py-1.5 ${
-          isImprovement ? "text-green-400" : "text-red-400"
+          isImprovement ? "text-primary" : "text-destructive"
         }`}
       >
         {change > 0 ? "+" : ""}

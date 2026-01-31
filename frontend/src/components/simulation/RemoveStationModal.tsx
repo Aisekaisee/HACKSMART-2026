@@ -71,30 +71,30 @@ export default function RemoveStationModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-slate-900 border-slate-800 max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-white flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
             Remove Station
           </DialogTitle>
-          <DialogDescription className="text-slate-400">
+          <DialogDescription>
             This action cannot be undone. The station will be permanently
             removed from this project.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label className="text-slate-300">Select Station to Remove</Label>
+            <Label>Select Station to Remove</Label>
             <Select
               value={selectedStationId}
               onValueChange={setSelectedStationId}
             >
-              <SelectTrigger className="bg-slate-800 border-slate-700 text-slate-300">
+              <SelectTrigger>
                 <SelectValue placeholder="Choose a station..." />
               </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-700">
+              <SelectContent>
                 {deletableStations.length === 0 ? (
-                  <div className="px-2 py-3 text-sm text-slate-500 text-center">
+                  <div className="px-2 py-3 text-sm text-muted-foreground text-center">
                     No removable stations.
                     <br />
                     <span className="text-xs">
@@ -103,11 +103,7 @@ export default function RemoveStationModal({
                   </div>
                 ) : (
                   deletableStations.map((station) => (
-                    <SelectItem
-                      key={station.id}
-                      value={station.id}
-                      className="text-slate-300"
-                    >
+                    <SelectItem key={station.id} value={station.id}>
                       {station.station_id} - {station.name || "Unnamed"}
                     </SelectItem>
                   ))
@@ -117,14 +113,14 @@ export default function RemoveStationModal({
           </div>
 
           {selectedStation && (
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30">
-              <p className="text-sm text-slate-300">
+            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+              <p className="text-sm text-foreground">
                 You are about to remove{" "}
-                <span className="font-semibold text-red-400">
+                <span className="font-semibold text-destructive">
                   {selectedStation.station_id}
                 </span>
               </p>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Location: ({selectedStation.latitude.toFixed(4)},{" "}
                 {selectedStation.longitude.toFixed(4)})
               </p>
@@ -136,13 +132,12 @@ export default function RemoveStationModal({
               type="button"
               variant="ghost"
               onClick={() => onOpenChange(false)}
-              className="text-slate-400"
             >
               Cancel
             </Button>
             <Button
               onClick={handleRemove}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              variant="destructive"
               disabled={loading || !selectedStationId}
             >
               {loading ? (

@@ -122,8 +122,8 @@ export default function SimulationPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
@@ -133,20 +133,20 @@ export default function SimulationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="h-14 border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm flex items-center px-4 gap-4 shrink-0">
+      <header className="h-14 border-b border-border bg-card flex items-center px-4 gap-4 shrink-0 shadow-sm z-50">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigate("/dashboard")}
-          className="text-slate-400 hover:text-white"
+          className="text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
-        <div className="h-6 w-px bg-slate-700" />
-        <h1 className="text-lg font-semibold text-white truncate">
+        <div className="h-6 w-px bg-border" />
+        <h1 className="text-lg font-semibold text-foreground truncate">
           {currentProject.name}
         </h1>
       </header>

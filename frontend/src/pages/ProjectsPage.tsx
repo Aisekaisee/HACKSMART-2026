@@ -104,22 +104,21 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
+      <header className="border-b border-border bg-background sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <Battery className="h-8 w-8 text-blue-500" />
-            <span className="text-xl font-bold text-white">SwapSim</span>
+            <Battery className="h-8 w-8 text-primary" />
+            <span className="text-xl font-bold text-foreground">SwapSim</span>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-slate-400 text-sm">{user?.email}</span>
-              <Badge
-                variant="outline"
-                className="border-blue-500/50 text-blue-400"
-              >
+              <span className="text-muted-foreground text-sm">
+                {user?.email}
+              </span>
+              <Badge variant="outline" className="border-primary/50 text-alert">
                 {user?.role}
               </Badge>
             </div>
@@ -127,7 +126,7 @@ export default function ProjectsPage() {
               variant="ghost"
               size="sm"
               onClick={handleLogout}
-              className="text-slate-400 hover:text-white"
+              className="text-muted-foreground hover:text-foreground"
             >
               <LogOut className="h-4 w-4 mr-2" />
               Logout
@@ -141,8 +140,8 @@ export default function ProjectsPage() {
         {/* Page Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white">My Projects</h1>
-            <p className="text-slate-400 mt-1">
+            <h1 className="text-3xl font-bold text-foreground">My Projects</h1>
+            <p className="text-muted-foreground mt-1">
               Manage your simulation projects and scenarios
             </p>
           </div>
@@ -150,22 +149,18 @@ export default function ProjectsPage() {
           {canCreateProject && (
             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-blue-600 hover:bg-blue-700">
+                <Button>
                   <Plus className="h-4 w-4 mr-2" />
                   New Project
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-slate-900 border-slate-800">
+              <DialogContent>
                 <DialogHeader>
-                  <DialogTitle className="text-white">
-                    Create New Project
-                  </DialogTitle>
+                  <DialogTitle>Create New Project</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleCreateProject} className="space-y-4 mt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-slate-300">
-                      Project Name
-                    </Label>
+                    <Label htmlFor="name">Project Name</Label>
                     <Input
                       id="name"
                       value={newProject.name}
@@ -176,13 +171,10 @@ export default function ProjectsPage() {
                         }))
                       }
                       placeholder="My Simulation Project"
-                      className="bg-slate-800 border-slate-700 text-white"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="description" className="text-slate-300">
-                      Description (optional)
-                    </Label>
+                    <Label htmlFor="description">Description (optional)</Label>
                     <Input
                       id="description"
                       value={newProject.description}
@@ -193,7 +185,6 @@ export default function ProjectsPage() {
                         }))
                       }
                       placeholder="A brief description of this project"
-                      className="bg-slate-800 border-slate-700 text-white"
                     />
                   </div>
                   <div className="flex justify-end gap-2 pt-4">
@@ -201,15 +192,11 @@ export default function ProjectsPage() {
                       type="button"
                       variant="ghost"
                       onClick={() => setCreateDialogOpen(false)}
-                      className="text-slate-400"
+                      className="text-muted-foreground"
                     >
                       Cancel
                     </Button>
-                    <Button
-                      type="submit"
-                      className="bg-blue-600 hover:bg-blue-700"
-                      disabled={creating}
-                    >
+                    <Button type="submit" disabled={creating}>
                       {creating ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -229,15 +216,15 @@ export default function ProjectsPage() {
         {/* Projects Grid */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : projects.length === 0 ? (
           <div className="text-center py-20">
-            <FolderOpen className="h-16 w-16 text-slate-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-slate-400">
+            <FolderOpen className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-muted-foreground">
               No projects yet
             </h3>
-            <p className="text-slate-500 mt-2">
+            <p className="text-muted-foreground mt-2">
               {canCreateProject
                 ? "Create your first project to get started"
                 : "No projects available to view"}
@@ -248,12 +235,12 @@ export default function ProjectsPage() {
             {projects.map((project) => (
               <Card
                 key={project.id}
-                className="bg-slate-900/50 border-slate-800 hover:border-blue-500/50 transition-colors cursor-pointer group"
+                className="bg-card hover:border-primary/50 transition-colors cursor-pointer group"
                 onClick={() => navigate(`/project/${project.id}`)}
               >
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                    <CardTitle className="text-white group-hover:text-blue-400 transition-colors">
+                    <CardTitle className="text-foreground group-hover:text-primary transition-colors">
                       {project.name}
                     </CardTitle>
                     {project.baseline_valid && (
@@ -262,12 +249,12 @@ export default function ProjectsPage() {
                       </Badge>
                     )}
                   </div>
-                  <CardDescription className="text-slate-400">
+                  <CardDescription className="text-muted-foreground">
                     {project.description || "No description"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
                     <span>Created {formatDate(project.created_at)}</span>
                   </div>

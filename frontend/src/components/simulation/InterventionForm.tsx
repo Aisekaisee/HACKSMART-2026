@@ -87,40 +87,32 @@ export default function InterventionForm({
   };
 
   return (
-    <Card className="bg-slate-800/80 border-slate-700">
+    <Card className="bg-card border-border">
       <CardContent className="p-4 space-y-4">
         {type === "weather_demand" && (
           <>
             <div className="space-y-2">
-              <Label className="text-xs text-slate-400">
+              <Label className="text-xs text-muted-foreground">
                 Weather Condition
               </Label>
               <Select
                 value={weatherCondition}
                 onValueChange={setWeatherCondition}
               >
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-300 h-8 text-sm">
+                <SelectTrigger className="h-8 text-sm">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
-                  <SelectItem value="rain" className="text-slate-300">
-                    Rain
-                  </SelectItem>
-                  <SelectItem value="heavy_rain" className="text-slate-300">
-                    Heavy Rain
-                  </SelectItem>
-                  <SelectItem value="extreme_heat" className="text-slate-300">
-                    Extreme Heat
-                  </SelectItem>
-                  <SelectItem value="fog" className="text-slate-300">
-                    Fog
-                  </SelectItem>
+                <SelectContent>
+                  <SelectItem value="rain">Rain</SelectItem>
+                  <SelectItem value="heavy_rain">Heavy Rain</SelectItem>
+                  <SelectItem value="extreme_heat">Extreme Heat</SelectItem>
+                  <SelectItem value="fog">Fog</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs text-slate-400">
+              <Label className="text-xs text-muted-foreground">
                 Demand Multiplier: {weatherMultiplier.toFixed(2)}x
               </Label>
               <Slider
@@ -135,7 +127,9 @@ export default function InterventionForm({
 
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <Label className="text-xs text-slate-400">Start Hour</Label>
+                <Label className="text-xs text-muted-foreground">
+                  Start Hour
+                </Label>
                 <Input
                   type="number"
                   min="0"
@@ -144,11 +138,13 @@ export default function InterventionForm({
                   onChange={(e) =>
                     setWeatherStartHour(parseInt(e.target.value) || 0)
                   }
-                  className="bg-slate-700 border-slate-600 text-white h-8 text-sm"
+                  className="h-8 text-sm"
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-slate-400">End Hour</Label>
+                <Label className="text-xs text-muted-foreground">
+                  End Hour
+                </Label>
                 <Input
                   type="number"
                   min="1"
@@ -157,7 +153,7 @@ export default function InterventionForm({
                   onChange={(e) =>
                     setWeatherEndHour(parseInt(e.target.value) || 24)
                   }
-                  className="bg-slate-700 border-slate-600 text-white h-8 text-sm"
+                  className="h-8 text-sm"
                 />
               </div>
             </div>
@@ -167,40 +163,46 @@ export default function InterventionForm({
         {type === "event_demand" && (
           <>
             <div className="space-y-2">
-              <Label className="text-xs text-slate-400">Event Name</Label>
+              <Label className="text-xs text-muted-foreground">
+                Event Name
+              </Label>
               <Input
                 value={eventName}
                 onChange={(e) => setEventName(e.target.value)}
                 placeholder="e.g., Cricket Match, Festival"
-                className="bg-slate-700 border-slate-600 text-white h-8 text-sm"
+                className="h-8 text-sm"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <Label className="text-xs text-slate-400">Latitude</Label>
+                <Label className="text-xs text-muted-foreground">
+                  Latitude
+                </Label>
                 <Input
                   type="number"
                   step="0.0001"
                   value={eventLat}
                   onChange={(e) => setEventLat(parseFloat(e.target.value) || 0)}
-                  className="bg-slate-700 border-slate-600 text-white h-8 text-sm"
+                  className="h-8 text-sm"
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-slate-400">Longitude</Label>
+                <Label className="text-xs text-muted-foreground">
+                  Longitude
+                </Label>
                 <Input
                   type="number"
                   step="0.0001"
                   value={eventLon}
                   onChange={(e) => setEventLon(parseFloat(e.target.value) || 0)}
-                  className="bg-slate-700 border-slate-600 text-white h-8 text-sm"
+                  className="h-8 text-sm"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs text-slate-400">
+              <Label className="text-xs text-muted-foreground">
                 Radius: {eventRadius} km
               </Label>
               <Slider
@@ -214,7 +216,7 @@ export default function InterventionForm({
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs text-slate-400">
+              <Label className="text-xs text-muted-foreground">
                 Demand Multiplier: {eventMultiplier.toFixed(2)}x
               </Label>
               <Slider
@@ -229,7 +231,9 @@ export default function InterventionForm({
 
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <Label className="text-xs text-slate-400">Start Hour</Label>
+                <Label className="text-xs text-muted-foreground">
+                  Start Hour
+                </Label>
                 <Input
                   type="number"
                   min="0"
@@ -238,11 +242,13 @@ export default function InterventionForm({
                   onChange={(e) =>
                     setEventStartHour(parseInt(e.target.value) || 0)
                   }
-                  className="bg-slate-700 border-slate-600 text-white h-8 text-sm"
+                  className="h-8 text-sm"
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-slate-400">End Hour</Label>
+                <Label className="text-xs text-muted-foreground">
+                  End Hour
+                </Label>
                 <Input
                   type="number"
                   min="1"
@@ -251,7 +257,7 @@ export default function InterventionForm({
                   onChange={(e) =>
                     setEventEndHour(parseInt(e.target.value) || 24)
                   }
-                  className="bg-slate-700 border-slate-600 text-white h-8 text-sm"
+                  className="h-8 text-sm"
                 />
               </div>
             </div>
@@ -260,22 +266,18 @@ export default function InterventionForm({
 
         {type === "replenishment_policy" && (
           <div className="space-y-2">
-            <Label className="text-xs text-slate-400">Policy Type</Label>
+            <Label className="text-xs text-muted-foreground">Policy Type</Label>
             <Select
               value={replenishmentPolicy}
               onValueChange={setReplenishmentPolicy}
             >
-              <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-300 h-8 text-sm">
+              <SelectTrigger className="h-8 text-sm">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-700">
-                <SelectItem value="reactive" className="text-slate-300">
-                  Reactive (on-demand)
-                </SelectItem>
-                <SelectItem value="proactive" className="text-slate-300">
-                  Proactive (scheduled)
-                </SelectItem>
-                <SelectItem value="predictive" className="text-slate-300">
+              <SelectContent>
+                <SelectItem value="reactive">Reactive (on-demand)</SelectItem>
+                <SelectItem value="proactive">Proactive (scheduled)</SelectItem>
+                <SelectItem value="predictive">
                   Predictive (ML-based)
                 </SelectItem>
               </SelectContent>
@@ -288,15 +290,11 @@ export default function InterventionForm({
             variant="ghost"
             size="sm"
             onClick={onCancel}
-            className="flex-1 text-slate-400 h-8"
+            className="flex-1 h-8"
           >
             Cancel
           </Button>
-          <Button
-            size="sm"
-            onClick={handleSubmit}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 h-8"
-          >
+          <Button size="sm" onClick={handleSubmit} className="flex-1 h-8">
             Add
           </Button>
         </div>

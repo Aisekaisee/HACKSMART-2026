@@ -83,11 +83,14 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative">
+      <div className="absolute inset-0 bg-grid-white/[0.02] -z-10" />
+      <div className="absolute inset-0 flex items-center justify-center bg-background [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)] -z-10" />
+
       {/* Back button */}
       <Button
         variant="ghost"
-        className="absolute top-6 left-6 text-slate-400 hover:text-white"
+        className="absolute top-6 left-6"
         onClick={() => navigate("/")}
       >
         <ArrowLeft className="h-4 w-4 mr-2" />
@@ -96,17 +99,17 @@ export default function AuthPage() {
 
       {/* Logo */}
       <div className="flex items-center gap-2 mb-8">
-        <Battery className="h-10 w-10 text-blue-500" />
-        <span className="text-2xl font-bold text-white">SwapSim</span>
+        <Battery className="h-10 w-10 text-primary" />
+        <span className="text-2xl font-bold text-foreground">SwapSim</span>
       </div>
 
       {/* Auth Card */}
-      <Card className="w-full max-w-md bg-slate-900/80 border-slate-800">
+      <Card className="w-full max-w-md bg-card border-border">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl text-white">
+          <CardTitle className="text-2xl text-foreground">
             {isLogin ? "Welcome Back" : "Create Account"}
           </CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardDescription className="text-muted-foreground">
             {isLogin
               ? "Sign in to access your simulation dashboard"
               : "Get started with your simulation workspace"}
@@ -115,9 +118,7 @@ export default function AuthPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-slate-300">
-                Email
-              </Label>
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 name="email"
@@ -125,17 +126,15 @@ export default function AuthPage() {
                 placeholder="you@example.com"
                 value={formData.email}
                 onChange={handleInputChange}
-                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500"
+                className={errors.email ? "border-destructive" : ""}
               />
               {errors.email && (
-                <p className="text-sm text-red-400">{errors.email}</p>
+                <p className="text-sm text-destructive">{errors.email}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-slate-300">
-                Password
-              </Label>
+              <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 name="password"
@@ -143,18 +142,16 @@ export default function AuthPage() {
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={handleInputChange}
-                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500"
+                className={errors.password ? "border-destructive" : ""}
               />
               {errors.password && (
-                <p className="text-sm text-red-400">{errors.password}</p>
+                <p className="text-sm text-destructive">{errors.password}</p>
               )}
             </div>
 
             {!isLogin && (
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-slate-300">
-                  Confirm Password
-                </Label>
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
                 <Input
                   id="confirmPassword"
                   name="confirmPassword"
@@ -162,21 +159,17 @@ export default function AuthPage() {
                   placeholder="••••••••"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500"
+                  className={errors.confirmPassword ? "border-destructive" : ""}
                 />
                 {errors.confirmPassword && (
-                  <p className="text-sm text-red-400">
+                  <p className="text-sm text-destructive">
                     {errors.confirmPassword}
                   </p>
                 )}
               </div>
             )}
 
-            <Button
-              type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-              disabled={loading}
-            >
+            <Button type="submit" className="w-full" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -197,7 +190,7 @@ export default function AuthPage() {
                 setIsLogin(!isLogin);
                 setErrors({});
               }}
-              className="text-sm text-slate-400 hover:text-blue-400 transition-colors"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
               {isLogin
                 ? "Don't have an account? Sign up"

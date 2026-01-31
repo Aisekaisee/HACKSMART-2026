@@ -32,22 +32,23 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-// Custom icon for stations
-const createStationIcon = (color: string) => {
+// Custom icon for stations - SVG Pin
+const createStationIcon = (color: string, isSelected: boolean) => {
+  const size = isSelected ? 32 : 24;
   return L.divIcon({
     className: "custom-station-marker",
     html: `
-      <div style="
-        width: 24px;
-        height: 24px;
-        background-color: ${color};
-        border: 3px solid white;
-        border-radius: 50%;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-      "></div>
+      <div style="position: relative; display: flex; justify-content: center; align-items: center;">
+        <svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${color}" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+          <circle cx="12" cy="10" r="3" fill="white"></circle>
+        </svg>
+        ${isSelected ? `<div style="position: absolute; width: ${size}px; height: ${size}px; background: ${color}; opacity: 0.3; border-radius: 50%; filter: blur(4px); z-index: -1;"></div>` : ""}
+      </div>
     `,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size], // Tip of pin
+    popupAnchor: [0, -size],
   });
 };
 
@@ -60,10 +61,10 @@ const createEventIcon = (type: string) => {
       <div style="
         width: 32px;
         height: 32px;
-        background-color: ${type === "weather_demand" ? "#3b82f6" : "#a855f7"};
+        background-color: ${type === "weather_demand" ? "hsl(var(--map-blue, 217 91% 60%))" : "hsl(var(--map-purple, 270 95% 65%))"};
         border: 2px solid white;
         border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -132,7 +133,6 @@ export default function SimulationMap() {
   };
 
   // Combine pending and active interventions for display
-  // Show active (from last simulation) if no pending, otherwise show pending
   const displayInterventions =
     pendingInterventions.length > 0
       ? pendingInterventions
@@ -146,20 +146,20 @@ export default function SimulationMap() {
   // Get utilization color for a station
   const getStationColor = (stationId: string) => {
     if (!simulationResult?.kpis?.stations) {
-      return "#3b82f6"; // Default blue
+      return "#10b981"; // Default Emerald Green (Primary-ish)
     }
 
     const stationKpi = simulationResult.kpis.stations.find(
       (s) => s.station_id === stationId,
     );
 
-    if (!stationKpi) return "#3b82f6";
+    if (!stationKpi) return "#10b981"; // Default
 
     const utilization = stationKpi.charger_utilization;
     if (utilization > 0.9) return "#ef4444"; // Red - overutilized
     if (utilization > 0.7) return "#f59e0b"; // Orange - high
-    if (utilization > 0.5) return "#22c55e"; // Green - good
-    return "#3b82f6"; // Blue - low
+    if (utilization > 0.5) return "#10b981"; // Green - good
+    return "#3b82f6"; // Blue - low (maybe change low to gray or teal?)
   };
 
   // Default center (Delhi)
@@ -167,12 +167,12 @@ export default function SimulationMap() {
   const defaultZoom = 11;
 
   return (
-    <div className="absolute inset-0">
+    <div className="absolute inset-0 bg-background">
       <MapContainer
         center={defaultCenter}
         zoom={defaultZoom}
         className={`h-full w-full ${isPickingLocation ? "cursor-crosshair" : ""}`}
-        style={{ background: "#0f172a" }}
+        style={{ background: "#000000" }} // Pure black background for map container
       >
         {/* Dark tile layer */}
         <TileLayer
@@ -183,7 +183,7 @@ export default function SimulationMap() {
         {/* Fit map to stations */}
         <FitBounds />
 
-        {/* Location picker click handler - only active when picking */}
+        {/* Location picker click handler */}
         {isPickingLocation && (
           <LocationPickerHandler onLocationPicked={handleLocationPicked} />
         )}
@@ -197,7 +197,7 @@ export default function SimulationMap() {
             <Marker
               key={station.id}
               position={[station.latitude, station.longitude]}
-              icon={createStationIcon(isSelected ? "#fff" : color)}
+              icon={createStationIcon(color, isSelected)}
               eventHandlers={{
                 click: () => dispatch(setSelectedStation(station.id)),
               }}
@@ -208,19 +208,17 @@ export default function SimulationMap() {
                     {station.station_id}
                   </h3>
                   {station.name && (
-                    <p className="text-xs text-gray-600">{station.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {station.name}
+                    </p>
                   )}
                   <div className="mt-2 grid grid-cols-2 gap-1 text-xs">
                     <div>
-                      <span className="text-gray-500">Chargers:</span>{" "}
+                      <span className="text-muted-foreground">Chargers:</span>{" "}
                       <span className="font-medium">{station.chargers}</span>
                     </div>
-                    {/* <div>
-                      <span className="text-gray-500">Bays:</span>{" "}
-                      <span className="font-medium">{station.bays}</span>
-                    </div> */}
                     <div>
-                      <span className="text-gray-500">Capacity:</span>{" "}
+                      <span className="text-muted-foreground">Capacity:</span>{" "}
                       <span className="font-medium">
                         {station.inventory_cap}
                       </span>
@@ -232,7 +230,7 @@ export default function SimulationMap() {
           );
         })}
 
-        {/* Event intervention markers with radius circles */}
+        {/* Event intervention markers */}
         {locationBasedInterventions.map((intervention, index) => {
           const params = intervention.params as {
             event_name?: string;
@@ -247,7 +245,6 @@ export default function SimulationMap() {
 
           return (
             <div key={`event-${index}`}>
-              {/* Radius circle */}
               <Circle
                 center={[params.lat, params.lon]}
                 radius={radiusMeters}
@@ -259,31 +256,30 @@ export default function SimulationMap() {
                   dashArray: "5, 5",
                 }}
               />
-              {/* Event marker */}
               <Marker
                 position={[params.lat, params.lon]}
                 icon={createEventIcon("event_demand")}
               >
                 <Popup>
                   <div className="p-2 min-w-[160px]">
-                    <h3 className="font-semibold text-sm text-purple-600">
+                    <h3 className="font-semibold text-sm text-purple-500">
                       🎉 {params.event_name || "Special Event"}
                     </h3>
                     <div className="mt-2 text-xs space-y-1">
                       <div>
-                        <span className="text-gray-500">Radius:</span>{" "}
+                        <span className="text-muted-foreground">Radius:</span>{" "}
                         <span className="font-medium">
                           {params.radius_km || 5} km
                         </span>
                       </div>
                       <div>
-                        <span className="text-gray-500">Demand:</span>{" "}
+                        <span className="text-muted-foreground">Demand:</span>{" "}
                         <span className="font-medium">
                           {params.multiplier || 1.5}x
                         </span>
                       </div>
                       <div>
-                        <span className="text-gray-500">Time:</span>{" "}
+                        <span className="text-muted-foreground">Time:</span>{" "}
                         <span className="font-medium">
                           {params.start_hour || 0}h - {params.end_hour || 24}h
                         </span>
@@ -299,24 +295,26 @@ export default function SimulationMap() {
 
       {/* Map legend */}
       {simulationResult && (
-        <div className="absolute bottom-4 left-4 bg-slate-900/90 border border-slate-700 rounded-lg p-3 text-xs">
-          <div className="font-medium text-slate-300 mb-2">Utilization</div>
+        <div className="absolute bottom-4 left-4 bg-card/90 border border-border rounded-lg p-3 text-xs backdrop-blur-sm shadow-lg">
+          <div className="font-medium text-foreground mb-2">Utilization</div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-red-500" />
-              <span className="text-slate-400">{">"}90% (Overutilized)</span>
+              <span className="text-muted-foreground">
+                {">"}90% (Overutilized)
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-orange-500" />
-              <span className="text-slate-400">70-90% (High)</span>
+              <span className="text-muted-foreground">70-90% (High)</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500" />
-              <span className="text-slate-400">50-70% (Optimal)</span>
+              <div className="w-3 h-3 rounded-full bg-emerald-500" />
+              <span className="text-muted-foreground">50-70% (Optimal)</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-blue-500" />
-              <span className="text-slate-400">{"<"}50% (Low)</span>
+              <span className="text-muted-foreground">{"<"}50% (Low)</span>
             </div>
           </div>
         </div>
@@ -324,10 +322,12 @@ export default function SimulationMap() {
 
       {/* Empty state overlay */}
       {stations.length === 0 && !isPickingLocation && (
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-950/50 pointer-events-none">
-          <div className="text-center">
-            <p className="text-slate-400 text-lg">No stations configured</p>
-            <p className="text-slate-500 text-sm mt-1">
+        <div className="absolute inset-0 flex items-center justify-center bg-background/50 pointer-events-none">
+          <div className="text-center p-6 bg-card border border-border rounded-xl shadow-2xl">
+            <p className="text-foreground text-lg font-medium">
+              No stations configured
+            </p>
+            <p className="text-muted-foreground text-sm mt-1">
               Add stations from the left panel
             </p>
           </div>
@@ -339,13 +339,13 @@ export default function SimulationMap() {
         <div className="absolute inset-0 pointer-events-none">
           {/* Top instruction banner */}
           <div className="absolute top-4 left-1/2 -translate-x-1/2 pointer-events-auto">
-            <div className="bg-slate-900/95 border border-blue-500/50 rounded-lg px-4 py-3 shadow-lg flex items-center gap-3">
-              <MapPin className="h-5 w-5 text-blue-400 animate-pulse" />
+            <div className="bg-card/95 border border-primary/50 rounded-lg px-4 py-3 shadow-[0_0_15px_rgba(34,197,94,0.2)] flex items-center gap-3 backdrop-blur-sm">
+              <MapPin className="h-5 w-5 text-primary animate-pulse" />
               <div className="text-center">
-                <p className="text-white font-medium">
+                <p className="text-foreground font-medium">
                   Click on the map to select location
                 </p>
-                <p className="text-slate-400 text-xs">
+                <p className="text-muted-foreground text-xs">
                   {pickingForModal === "addStation"
                     ? "Adding new station"
                     : "Editing station location"}
@@ -355,7 +355,7 @@ export default function SimulationMap() {
                 variant="ghost"
                 size="sm"
                 onClick={handleCancelPicking}
-                className="ml-2 text-slate-400 hover:text-white hover:bg-slate-800"
+                className="ml-2 text-muted-foreground hover:text-foreground hover:bg-secondary"
               >
                 <X className="h-4 w-4 mr-1" />
                 Cancel
@@ -366,9 +366,9 @@ export default function SimulationMap() {
           {/* Crosshair in center (visual aid) */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
             <div className="relative w-12 h-12">
-              <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-blue-400/50" />
-              <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-blue-400/50" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 border-2 border-blue-400 rounded-full bg-blue-400/20" />
+              <div className="absolute top-1/2 left-0 right-0 h-px bg-primary/70" />
+              <div className="absolute left-1/2 top-0 bottom-0 w-px bg-primary/70" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 border-2 border-primary rounded-full" />
             </div>
           </div>
         </div>

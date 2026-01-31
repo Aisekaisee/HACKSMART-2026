@@ -72,7 +72,6 @@ export default function LeftSidebar() {
 
   const hasBaselineKPIs = !!currentProject?.baseline_kpis;
 
-  // Reopen modal after location is picked
   useEffect(() => {
     if (pickedLocation && !isPickingLocation) {
       if (pickingForModal === "addStation") {
@@ -101,7 +100,6 @@ export default function LeftSidebar() {
     setRunningBaseline(true);
     try {
       const result = await api.projects.runBaseline(projectId);
-      // Update the current project with baseline KPIs
       if (currentProject) {
         dispatch(
           setCurrentProject({
@@ -126,7 +124,6 @@ export default function LeftSidebar() {
 
     dispatch(setSimulationRunning(true));
     try {
-      // Create scenario with interventions
       const scenario = await api.scenarios.create(projectId, {
         name: `Simulation ${new Date().toLocaleString()}`,
         interventions: pendingInterventions,
@@ -135,10 +132,8 @@ export default function LeftSidebar() {
 
       dispatch(addScenario(scenario));
 
-      // Run the simulation
       const result = await api.scenarios.run(projectId, scenario.id);
 
-      // Check if simulation failed
       if (result.status === "failed") {
         toast.error(result.error || "Simulation failed");
         dispatch(setSimulationRunning(false));
@@ -170,18 +165,18 @@ export default function LeftSidebar() {
   };
 
   return (
-    <aside className="w-80 border-r border-slate-800 bg-slate-900/50 flex flex-col overflow-hidden shrink-0">
+    <aside className="w-80 border-r border-border bg-background flex flex-col overflow-hidden shrink-0">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* Station Management */}
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-card border-border">
           <CardHeader className="py-3 px-4">
-            <CardTitle className="text-sm font-medium text-slate-300 flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
+            <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-primary" />
               Station Management
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4 space-y-3">
-            <div className="text-sm text-slate-400">
+            <div className="text-sm text-muted-foreground">
               {stations.length} station{stations.length !== 1 ? "s" : ""}{" "}
               configured
             </div>
@@ -202,7 +197,7 @@ export default function LeftSidebar() {
                 {stations.map((station) => (
                   <div
                     key={station.id}
-                    className="text-xs text-slate-500 py-1 px-2 rounded bg-slate-800/50 flex justify-between items-center"
+                    className="text-xs text-muted-foreground py-1 px-2 rounded bg-secondary/50 flex justify-between items-center"
                   >
                     <span className="flex items-center gap-1">
                       {station.station_id}
@@ -216,7 +211,7 @@ export default function LeftSidebar() {
                         </Badge>
                       )}
                     </span>
-                    <span className="text-slate-600">
+                    <span className="text-muted-foreground">
                       ({station.latitude.toFixed(2)},{" "}
                       {station.longitude.toFixed(2)})
                     </span>
@@ -229,7 +224,7 @@ export default function LeftSidebar() {
               <Button
                 size="sm"
                 variant="outline"
-                className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
+                className="flex-1 hover:bg-secondary hover:text-foreground"
                 onClick={() => dispatch(openModal("addStation"))}
               >
                 <Plus className="h-3 w-3 mr-1" />
@@ -238,7 +233,7 @@ export default function LeftSidebar() {
               <Button
                 size="sm"
                 variant="outline"
-                className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
+                className="flex-1 hover:bg-secondary hover:text-foreground"
                 onClick={() => dispatch(openModal("editStation"))}
                 disabled={stations.length === 0}
               >
@@ -248,7 +243,7 @@ export default function LeftSidebar() {
               <Button
                 size="sm"
                 variant="outline"
-                className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
+                className="flex-1 hover:bg-secondary hover:text-foreground"
                 onClick={() => dispatch(openModal("removeStation"))}
                 disabled={stations.length === 0}
               >
@@ -259,20 +254,17 @@ export default function LeftSidebar() {
           </CardContent>
         </Card>
 
-        <Separator className="bg-slate-700" />
+        <Separator className="bg-border" />
 
         {/* Interventions */}
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-card border-border">
           <CardHeader className="py-3 px-4">
-            <CardTitle className="text-sm font-medium text-slate-300 flex items-center justify-between">
+            <CardTitle className="text-sm font-medium text-foreground flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
+                <Calendar className="h-4 w-4 text-primary" />
                 Interventions
               </span>
-              <Badge
-                variant="outline"
-                className="border-slate-600 text-slate-400"
-              >
+              <Badge variant="outline" className="text-muted-foreground">
                 {pendingInterventions.length}
               </Badge>
             </CardTitle>
@@ -284,26 +276,26 @@ export default function LeftSidebar() {
                 {pendingInterventions.map((intervention, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-2 rounded bg-slate-800/80 border border-slate-700"
+                    className="flex items-center justify-between p-2 rounded bg-secondary/50 border border-border"
                   >
                     <div className="flex items-center gap-2">
                       {intervention.type === "weather_demand" && (
-                        <Cloud className="h-3 w-3 text-blue-400" />
+                        <Cloud className="h-3 w-3 text-primary" />
                       )}
                       {intervention.type === "event_demand" && (
-                        <Calendar className="h-3 w-3 text-purple-400" />
+                        <Calendar className="h-3 w-3 text-chart-1" />
                       )}
                       {intervention.type === "replenishment_policy" && (
-                        <RefreshCcw className="h-3 w-3 text-green-400" />
+                        <RefreshCcw className="h-3 w-3 text-chart-2" />
                       )}
-                      <span className="text-xs text-slate-300">
+                      <span className="text-xs text-foreground">
                         {getInterventionLabel(intervention)}
                       </span>
                     </div>
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-6 w-6 p-0 text-slate-500 hover:text-red-400"
+                      className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
                       onClick={() => dispatch(removePendingIntervention(index))}
                     >
                       <X className="h-3 w-3" />
@@ -331,35 +323,35 @@ export default function LeftSidebar() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-full border-slate-600 text-slate-300 hover:bg-slate-700"
+                    className="w-full hover:bg-secondary hover:text-foreground"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Add Intervention
                     <ChevronDown className="h-4 w-4 ml-auto" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-slate-800 border-slate-700">
+                <DropdownMenuContent className="bg-popover border-border">
                   <DropdownMenuItem
-                    className="text-slate-300 focus:bg-slate-700 cursor-pointer"
+                    className="text-popover-foreground focus:bg-secondary cursor-pointer"
                     onClick={() => handleAddIntervention("weather_demand")}
                   >
-                    <Cloud className="h-4 w-4 mr-2 text-blue-400" />
+                    <Cloud className="h-4 w-4 mr-2 text-primary" />
                     Weather Event
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className="text-slate-300 focus:bg-slate-700 cursor-pointer"
+                    className="text-popover-foreground focus:bg-secondary cursor-pointer"
                     onClick={() => handleAddIntervention("event_demand")}
                   >
-                    <Calendar className="h-4 w-4 mr-2 text-purple-400" />
+                    <Calendar className="h-4 w-4 mr-2 text-chart-1" />
                     Special Event
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className="text-slate-300 focus:bg-slate-700 cursor-pointer"
+                    className="text-popover-foreground focus:bg-secondary cursor-pointer"
                     onClick={() =>
                       handleAddIntervention("replenishment_policy")
                     }
                   >
-                    <RefreshCcw className="h-4 w-4 mr-2 text-green-400" />
+                    <RefreshCcw className="h-4 w-4 mr-2 text-chart-2" />
                     Replenishment Policy
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -368,31 +360,40 @@ export default function LeftSidebar() {
           </CardContent>
         </Card>
 
-        <Separator className="bg-slate-700" />
+        <Separator className="bg-border" />
 
         {/* Simulation Controls */}
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-card border-border">
           <CardHeader className="py-3 px-4">
-            <CardTitle className="text-sm font-medium text-slate-300 flex items-center gap-2">
-              <Play className="h-4 w-4" />
+            <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+              <Play className="h-4 w-4 text-primary" />
               Simulation Controls
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4 space-y-3">
             <div className="space-y-2">
-              <label className="text-xs text-slate-400">Duration</label>
+              <label className="text-xs text-muted-foreground">Duration</label>
               <Select value={duration} onValueChange={setDuration}>
-                <SelectTrigger className="bg-slate-800 border-slate-700 text-slate-300">
+                <SelectTrigger className="bg-background border-border text-foreground">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
-                  <SelectItem value="24" className="text-slate-300">
+                <SelectContent className="bg-popover border-border">
+                  <SelectItem
+                    value="24"
+                    className="text-foreground focus:bg-secondary cursor-pointer"
+                  >
                     24 hours
                   </SelectItem>
-                  <SelectItem value="168" className="text-slate-300">
+                  <SelectItem
+                    value="168"
+                    className="text-foreground focus:bg-secondary cursor-pointer"
+                  >
                     1 week (168h)
                   </SelectItem>
-                  <SelectItem value="720" className="text-slate-300">
+                  <SelectItem
+                    value="720"
+                    className="text-foreground focus:bg-secondary cursor-pointer"
+                  >
                     1 month (720h)
                   </SelectItem>
                 </SelectContent>
@@ -400,9 +401,11 @@ export default function LeftSidebar() {
             </div>
 
             {/* Baseline Status & Run */}
-            <div className="p-3 bg-slate-900/50 rounded-lg border border-slate-700 space-y-2">
+            <div className="p-3 bg-secondary/20 rounded-lg border border-border space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-400">Baseline Status</span>
+                <span className="text-xs text-muted-foreground">
+                  Baseline Status
+                </span>
                 {hasBaselineKPIs ? (
                   <Badge
                     variant="outline"
@@ -422,7 +425,7 @@ export default function LeftSidebar() {
               </div>
               <Button
                 variant="outline"
-                className="w-full border-slate-600 text-slate-300 hover:bg-slate-700"
+                className="w-full hover:bg-secondary hover:text-foreground"
                 onClick={handleRunBaseline}
                 disabled={runningBaseline || stations.length === 0}
               >
@@ -438,15 +441,15 @@ export default function LeftSidebar() {
                   </>
                 )}
               </Button>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 Run baseline first to enable comparison with scenarios
               </p>
             </div>
 
-            <Separator className="bg-slate-700" />
+            <Separator className="bg-border" />
 
             <Button
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              className="w-full" // Removed direct color, defaults to primary
               onClick={handleRunSimulation}
               disabled={running || stations.length === 0}
             >
@@ -464,7 +467,7 @@ export default function LeftSidebar() {
             </Button>
 
             {stations.length === 0 && (
-              <p className="text-xs text-slate-500 text-center">
+              <p className="text-xs text-muted-foreground text-center">
                 Add at least one station to run a simulation
               </p>
             )}
