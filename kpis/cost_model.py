@@ -164,7 +164,7 @@ class CostBreakdown:
 class CostModel:
     """Calculate detailed cost breakdown for simulation results."""
 
-    def __init__(self, params: CostParameters = None):
+    def __init__(self, params: CostParameters = None): # type: ignore
         """Initialize with cost parameters."""
         self.params = params or CostParameters()
 

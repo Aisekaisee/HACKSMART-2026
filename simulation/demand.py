@@ -52,8 +52,8 @@ class DemandGenerator:
         base_rate: float,  # Base arrivals per hour
         time_multipliers: Dict[int, float],
         scenario_multiplier: float = 1.0,
-        random_state: np.random.RandomState = None,
-        station_lat: float = None,
+        random_state: np.random.RandomState = None, # type: ignore
+        station_lat: float = None, # type: ignore
         station_lon: float = None,
         weather_modifiers: list = None,
         event_modifiers: list = None
