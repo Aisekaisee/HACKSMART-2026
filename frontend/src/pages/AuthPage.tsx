@@ -20,8 +20,8 @@ export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    email: "",
-    password: "",
+    email: "test@test.com",
+    password: "test123",
     confirmPassword: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -118,7 +118,10 @@ export default function AuthPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">
+                Email <span className="font-mono ">(test@test.com)</span>
+              </Label>
+
               <Input
                 id="email"
                 name="email"
@@ -134,7 +137,7 @@ export default function AuthPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Password <span className="font-mono">(test123)</span> </Label>
               <Input
                 id="password"
                 name="password"

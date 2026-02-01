@@ -47,7 +47,7 @@ export default function SimulationPage() {
       ) {
         return;
       }
-      
+
       // Press 'i' to start tutorial (only when not already active)
       if (e.key.toLowerCase() === "i" && !tutorialActive) {
         dispatch(startTutorial());
@@ -178,15 +178,14 @@ export default function SimulationPage() {
 
         {/* Tutorial Trigger Button */}
         <Button
-          variant="outline"
           size="sm"
           onClick={() => dispatch(startTutorial())}
-          className="text-muted-foreground hover:text-foreground border-indigo-500/30 hover:border-indigo-500/60 hover:bg-indigo-500/10 gap-2"
+          className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2"
           title="Press 'i' to start tutorial"
         >
           <Info className="h-4 w-4" />
-          <span className="hidden sm:inline">Tutorial</span>
-          <kbd className="hidden md:inline-flex h-5 items-center gap-0.5 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+          <span className="hidden sm:inline">Help</span>
+          <kbd className="hidden md:inline-flex h-5 items-center gap-0.5 rounded bg-indigo-500/50 px-1.5 font-mono text-[10px] font-medium text-indigo-100">
             i
           </kbd>
         </Button>

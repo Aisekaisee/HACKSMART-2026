@@ -1,6 +1,10 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "@/store";
-import { nextTutorialStep, prevTutorialStep, endTutorial } from "@/features/uiSlice";
+import {
+  nextTutorialStep,
+  prevTutorialStep,
+  endTutorial,
+} from "@/features/uiSlice";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, X, Sparkles } from "lucide-react";
 import { tutorialSteps } from "./tutorialSteps";
@@ -15,7 +19,9 @@ interface SpotlightRect {
 export default function TutorialOverlay() {
   const dispatch = useAppDispatch();
   const { tutorialActive, tutorialStep } = useAppSelector((state) => state.ui);
-  const [spotlightRect, setSpotlightRect] = useState<SpotlightRect | null>(null);
+  const [spotlightRect, setSpotlightRect] = useState<SpotlightRect | null>(
+    null,
+  );
   const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
   const [isAnimating, setIsAnimating] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -39,7 +45,7 @@ export default function TutorialOverlay() {
     }
 
     const targetElement = document.querySelector(
-      `[data-tutorial="${currentStep.target}"]`
+      `[data-tutorial="${currentStep.target}"]`,
     );
 
     if (!targetElement) {
@@ -57,9 +63,9 @@ export default function TutorialOverlay() {
     const padding = 12;
 
     // Check if element is too large (covers more than 60% of viewport)
-    const isLargeElement = 
-      (rect.width > window.innerWidth * 0.6) || 
-      (rect.height > window.innerHeight * 0.6);
+    const isLargeElement =
+      rect.width > window.innerWidth * 0.6 ||
+      rect.height > window.innerHeight * 0.6;
 
     // For large elements, show a subtle border highlight instead of full spotlight
     if (isLargeElement) {
@@ -97,42 +103,80 @@ export default function TutorialOverlay() {
 
     switch (currentStep.position) {
       case "right":
-        finalTop = Math.max(80, Math.min(rect.top, window.innerHeight - tooltipHeight - 40));
+        finalTop = Math.max(
+          80,
+          Math.min(rect.top, window.innerHeight - tooltipHeight - 40),
+        );
         finalLeft = rect.right + gap + padding;
         // Check if tooltip goes off right edge
         if (finalLeft + tooltipWidth > window.innerWidth - 20) {
           // Fall back to center
-          style = { ...style, top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
+          style = {
+            ...style,
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+          };
         } else {
           style = { ...style, top: finalTop, left: finalLeft };
         }
         break;
       case "left":
-        finalTop = Math.max(80, Math.min(rect.top, window.innerHeight - tooltipHeight - 40));
+        finalTop = Math.max(
+          80,
+          Math.min(rect.top, window.innerHeight - tooltipHeight - 40),
+        );
         finalLeft = rect.left - tooltipWidth - gap - padding;
         // Check if tooltip goes off left edge
         if (finalLeft < 20) {
-          style = { ...style, top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
+          style = {
+            ...style,
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+          };
         } else {
           style = { ...style, top: finalTop, left: finalLeft };
         }
         break;
       case "bottom":
         finalTop = rect.bottom + gap + padding;
-        finalLeft = Math.max(20, Math.min(rect.left + rect.width / 2 - tooltipWidth / 2, window.innerWidth - tooltipWidth - 20));
+        finalLeft = Math.max(
+          20,
+          Math.min(
+            rect.left + rect.width / 2 - tooltipWidth / 2,
+            window.innerWidth - tooltipWidth - 20,
+          ),
+        );
         // Check if tooltip goes off bottom edge
         if (finalTop + tooltipHeight > window.innerHeight - 20) {
-          style = { ...style, top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
+          style = {
+            ...style,
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+          };
         } else {
           style = { ...style, top: finalTop, left: finalLeft };
         }
         break;
       case "top":
         finalTop = rect.top - tooltipHeight - gap - padding;
-        finalLeft = Math.max(20, Math.min(rect.left + rect.width / 2 - tooltipWidth / 2, window.innerWidth - tooltipWidth - 20));
+        finalLeft = Math.max(
+          20,
+          Math.min(
+            rect.left + rect.width / 2 - tooltipWidth / 2,
+            window.innerWidth - tooltipWidth - 20,
+          ),
+        );
         // Check if tooltip goes off top edge
         if (finalTop < 80) {
-          style = { ...style, top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
+          style = {
+            ...style,
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+          };
         } else {
           style = { ...style, top: finalTop, left: finalLeft };
         }
@@ -268,44 +312,36 @@ export default function TutorialOverlay() {
       {/* Spotlight border glow effect */}
       {spotlightRect && (
         <div
-          className="absolute pointer-events-none transition-all duration-300 ease-out"
+          className="absolute pointer-events-none transition-all duration-300 ease-out border-2 border-indigo-500"
           style={{
             top: spotlightRect.top,
             left: spotlightRect.left,
             width: spotlightRect.width,
             height: spotlightRect.height,
             borderRadius: 12,
-            boxShadow: `
-              0 0 0 2px rgba(99, 102, 241, 0.8),
-              0 0 20px rgba(99, 102, 241, 0.4),
-              0 0 40px rgba(99, 102, 241, 0.2),
-              inset 0 0 20px rgba(99, 102, 241, 0.1)
-            `,
+            boxShadow: "0 0 0 4px rgba(99, 102, 241, 0.2)",
           }}
         />
       )}
 
       {/* Tooltip Card */}
       <div
-        className={`bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-indigo-500/30 rounded-2xl shadow-2xl p-6 w-[380px] transition-all duration-300 ease-out ${
+        className={`bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-6 w-[380px] transition-all duration-300 ease-out ${
           isAnimating ? "opacity-0 scale-95" : "opacity-100 scale-100"
         }`}
         style={tooltipStyle}
       >
-        {/* Decorative gradient border */}
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-pink-500/20 -z-10 blur-sm" />
-
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl shadow-lg shadow-indigo-500/30">
-              {currentStep.icon || <Sparkles className="w-6 h-6 text-white" />}
+            <div className="w-11 h-11 rounded-lg bg-indigo-600 flex items-center justify-center text-xl">
+              {currentStep.icon || <Sparkles className="w-5 h-5 text-white" />}
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white leading-tight">
+              <h3 className="text-base font-semibold text-white leading-tight">
                 {currentStep.title}
               </h3>
-              <p className="text-xs text-indigo-300/80 mt-0.5">
+              <p className="text-xs text-slate-400 mt-0.5">
                 Step {tutorialStep + 1} of {tutorialSteps.length}
               </p>
             </div>
@@ -326,9 +362,9 @@ export default function TutorialOverlay() {
         </p>
 
         {/* Progress bar */}
-        <div className="w-full h-1.5 bg-slate-700/50 rounded-full mb-5 overflow-hidden">
+        <div className="w-full h-1 bg-slate-700 rounded-full mb-5 overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500 ease-out"
+            className="h-full bg-indigo-500 rounded-full transition-all duration-500 ease-out"
             style={{
               width: `${((tutorialStep + 1) / tutorialSteps.length) * 100}%`,
             }}
@@ -357,7 +393,7 @@ export default function TutorialOverlay() {
             </Button>
             <Button
               onClick={handleNext}
-              className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/30 min-w-[100px]"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[100px]"
             >
               {isLastStep ? (
                 "Finish"
