@@ -5,6 +5,7 @@ import {
   Marker,
   Popup,
   Circle,
+  Polyline,
   useMap,
   useMapEvents,
 } from "react-leaflet";
@@ -74,6 +75,20 @@ const injectAnimationStyles = () => {
     .custom-station-marker {
       background: transparent !important;
       border: none !important;
+    }
+    /* Animated network lines */
+    @keyframes dash-flow {
+      to {
+        stroke-dashoffset: -20;
+      }
+    }
+    .network-line {
+      stroke-dasharray: 10, 10;
+      animation: dash-flow 1s linear infinite;
+    }
+    .network-line-slow {
+      stroke-dasharray: 15, 10;
+      animation: dash-flow 2s linear infinite;
     }
   `;
   document.head.appendChild(style);
@@ -417,6 +432,70 @@ export default function SimulationMap() {
     return "#3b82f6";
   };
 
+  // Generate network connections between stations (connect nearby stations)
+  const stationConnections = useMemo(() => {
+    if (stations.length < 2) return [];
+
+    const connections: Array<{
+      from: [number, number];
+      to: [number, number];
+      distance: number;
+    }> = [];
+
+    // Calculate distance between two points (Haversine formula simplified)
+    const getDistance = (
+      lat1: number,
+      lon1: number,
+      lat2: number,
+      lon2: number,
+    ) => {
+      const R = 6371; // Earth's radius in km
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLon = ((lon2 - lon1) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    };
+
+    // Connect each station to its nearest neighbors (within 15km)
+    const maxDistance = 15; // km
+
+    for (let i = 0; i < stations.length; i++) {
+      for (let j = i + 1; j < stations.length; j++) {
+        const dist = getDistance(
+          stations[i].latitude,
+          stations[i].longitude,
+          stations[j].latitude,
+          stations[j].longitude,
+        );
+
+        if (dist <= maxDistance) {
+          connections.push({
+            from: [stations[i].latitude, stations[i].longitude],
+            to: [stations[j].latitude, stations[j].longitude],
+            distance: dist,
+          });
+        }
+      }
+    }
+
+    return connections;
+  }, [stations]);
+
+  // Coverage radius for stations (in meters) - based on tier or default
+  const getCoverageRadius = (station: (typeof stations)[0]) => {
+    // Base radius 3km, can vary by tier
+    const baseRadius = 3000; // 3km in meters
+    if (station.tier === "high") return baseRadius * 1.2;
+    if (station.tier === "low") return baseRadius * 0.8;
+    return baseRadius;
+  };
+
   // Default center (Delhi)
   const defaultCenter: [number, number] = [28.6139, 77.209];
   const defaultZoom = 11;
@@ -442,6 +521,42 @@ export default function SimulationMap() {
         {isPickingLocation && (
           <LocationPickerHandler onLocationPicked={handleLocationPicked} />
         )}
+
+        {/* Station coverage circles (shaded areas) */}
+        {stations.map((station) => {
+          const color = getStationColor(station.station_id);
+          const radius = getCoverageRadius(station);
+
+          return (
+            <Circle
+              key={`coverage-${station.id}`}
+              center={[station.latitude, station.longitude]}
+              radius={radius}
+              pathOptions={{
+                color: color,
+                fillColor: color,
+                fillOpacity: 0.15,
+                weight: 1,
+                opacity: 0.4,
+              }}
+            />
+          );
+        })}
+
+        {/* Animated network connection lines */}
+        {stationConnections.map((connection, index) => (
+          <Polyline
+            key={`connection-${index}`}
+            positions={[connection.from, connection.to]}
+            pathOptions={{
+              color: "#10b981",
+              weight: 1.5,
+              opacity: 0.5,
+              dashArray: "8, 8",
+              className: "network-line-slow",
+            }}
+          />
+        ))}
 
         {/* Station markers */}
         {stations.map((station) => {
