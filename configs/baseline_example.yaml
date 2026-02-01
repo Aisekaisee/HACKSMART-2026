@@ -4,35 +4,35 @@
 stations:
   - station_id: "WDL_01"
     tier: "high"
-    chargers: 6
-    inventory_capacity: 6
+    chargers: 20
+    inventory_capacity: 20
     lat: 28.66
     lon: 77.22
-    initial_charged: 6
+    initial_charged: 20
   
   - station_id: "CNP_02"
     tier: "high"
-    chargers: 5
-    inventory_capacity: 5
+    chargers: 18
+    inventory_capacity: 18
     lat: 28.57
     lon: 77.20
-    initial_charged: 5
+    initial_charged: 18
   
   - station_id: "RKP_03"
     tier: "medium"
-    chargers: 3
-    inventory_capacity: 3
+    chargers: 12
+    inventory_capacity: 12
     lat: 28.63
     lon: 77.28
-    initial_charged: 3
+    initial_charged: 12
   
   - station_id: "DWK_04"
     tier: "low"
-    chargers: 2
-    inventory_capacity: 2
+    chargers: 6
+    inventory_capacity: 6
     lat: 28.59
     lon: 77.31
-    initial_charged: 2
+    initial_charged: 6
 
 demand:
   base_rates:
@@ -71,10 +71,11 @@ demand:
 
 operations:
   swap_duration: 2.0        # minutes
-  charge_duration: 210.0    # minutes (3.5 hours)
+  charge_duration: 60.0     # minutes (1 hour - fast charging)
   replenishment_threshold: 0.2   # 20% of capacity
   replenishment_amount: 10
   replenishment_delay: 30.0      # minutes
+  max_wait_time: 15.0            # minutes - customer leaves if wait exceeds this
 
 simulation_duration: 1440.0  # 24 hours in minutes
 random_seed: 42

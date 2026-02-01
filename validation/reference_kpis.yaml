@@ -1,13 +1,14 @@
 # Reference KPIs for baseline validation
 # These are expected values for the baseline_example.yaml configuration
+# With charge_duration=60min (1 hour fast charging) and increased station capacity
 
 city_kpis:
-  avg_wait_time: 4.5       # minutes (±15% tolerance)
-  lost_swaps_pct: 8.0      # percentage (±15% tolerance)
-  charger_utilization: 0.75  # 0-1 scale (±10% tolerance)
-  idle_inventory_pct: 15.0
-  throughput: 45.0         # swaps per hour
-  cost_proxy: 15.0
+  avg_wait_time: 5.0       # minutes (±15% tolerance)
+  lost_swaps_pct: 22.0     # percentage (±15% tolerance)
+  charger_utilization: 0.69  # 0-1 scale (±10% tolerance)
+  idle_inventory_pct: 26.0   # percentage of capacity that is charged/idle
+  throughput: 41.0         # swaps per hour
+  cost_proxy: 50.0         # cost score (lower is better)
 
 # Note: Validation focuses on wait_time, lost_swaps_pct, and charger_utilization
 # Other metrics are informational

@@ -136,13 +136,21 @@ export interface ScenarioCreate {
 
 // KPI Types
 export interface CityKPI {
+  /** Average wait time in minutes */
   avg_wait_time: number;
+  /** Lost swaps as percentage (0-100) */
   lost_swaps_pct: number;
+  /** Total number of lost/rejected swaps */
   total_lost: number;
+  /** Total number of swap requests */
   total_arrivals: number;
+  /** Charger utilization as decimal (0-1), multiply by 100 for percentage */
   charger_utilization: number;
+  /** Average charged inventory as percentage of capacity */
   idle_inventory_pct: number;
+  /** Successful swaps per hour */
   throughput: number;
+  /** Weighted cost score (lower is better): 0.5*wait + 2*lost% + 10*(1-util) */
   cost_proxy: number;
 }
 
@@ -152,9 +160,13 @@ export interface StationKPI {
   total_arrivals: number;
   successful_swaps: number;
   lost_swaps: number;
+  /** Lost swaps as percentage (0-100) */
   lost_swaps_pct: number;
+  /** Average wait time in minutes */
   avg_wait_time: number;
+  /** Charger utilization as decimal (0-1), multiply by 100 for percentage */
   charger_utilization: number;
+  /** Average number of charged batteries in inventory */
   avg_charged_inventory: number;
 }
 
@@ -192,11 +204,70 @@ export interface KPIComparison {
   };
 }
 
+// Financial/Cost Types (BatterySmart Pricing)
+export interface CapitalCosts {
+  chargers: number;
+  inventory: number;
+  total: number;
+  daily_amortized: number;
+}
+
+export interface OperationalBreakdown {
+  electricity: number;
+  labor: number;
+  maintenance: number;
+  rent: number;
+  swap_operations: number;
+  replenishment: number;
+}
+
+export interface OperationalCosts {
+  total: number;
+  breakdown: OperationalBreakdown;
+}
+
+export interface RevenueBreakdown {
+  base_swap: number; // ₹170 × successful_swaps
+  service_charge: number; // ₹40 × successful_swaps
+  total: number;
+  per_swap: number; // ₹210
+}
+
+export interface OpportunityCosts {
+  lost_revenue: number;
+  lost_swaps: number;
+}
+
+export interface PerSwapEconomics {
+  revenue: number; // ₹210
+  cost: number; // Operational cost per swap
+  margin: number; // Profit per swap
+}
+
+export interface FinancialSummary {
+  successful_swaps: number;
+  lost_swaps: number;
+  gross_profit: number;
+  profit_margin_pct: number;
+  net_operational_profit: number;
+  total_cost: number;
+}
+
+export interface FinancialData {
+  capital: CapitalCosts;
+  operational_24hr: OperationalCosts;
+  revenue: RevenueBreakdown;
+  opportunity: OpportunityCosts;
+  per_swap_economics: PerSwapEconomics;
+  summary: FinancialSummary;
+}
+
 export interface SimulationResult {
   scenario_id: string;
   status: "running" | "completed" | "failed";
   kpis?: SimulationKPIs;
   timeline?: TimelineFrame[];
+  costs?: FinancialData;
   error?: string;
   comparison?: KPIComparison | null;
 }

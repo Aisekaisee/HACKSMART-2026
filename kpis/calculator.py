@@ -16,7 +16,8 @@ class StationKPIs:
     total_arrivals: int
     successful_swaps: int
     charger_utilization: float  # 0-1
-    avg_charged_inventory: float
+    avg_charged_inventory: float  # absolute count
+    inventory_capacity: int  # for percentage calculation
 
 
 @dataclass
@@ -35,7 +36,7 @@ class CityKPIs:
 
 class KPICalculator:
     """Calculate KPIs from simulation results."""
-    
+
     @staticmethod
     def calculate(
         simulation_results: Dict[str, Any],
@@ -46,7 +47,7 @@ class KPICalculator:
         """
         Calculate all KPIs from simulation results.
         Returns dict with frontend-expected keys and legacy 'city_kpis'/'stations' for compatibility.
-        
+
         Args:
             simulation_results: Results from simulation engine
             swap_duration: Actual swap duration from config (minutes)
@@ -54,9 +55,9 @@ class KPICalculator:
             cost_breakdown: Optional CostBreakdown object for operational_cost
         """
         duration_hours = simulation_results["simulation_duration"] / 60.0
-        
+
         station_kpis_list = []
-        
+
         # Calculate station-level KPIs
         for station_data in simulation_results["stations"]:
             station_kpis = KPICalculator._calculate_station_kpis(
@@ -66,13 +67,13 @@ class KPICalculator:
                 charge_duration
             )
             station_kpis_list.append(station_kpis)
-        
+
         # Calculate city-level KPIs
         city_kpis = KPICalculator._calculate_city_kpis(
             station_kpis_list,
             duration_hours
         )
-        
+
         # Build per_station dict keyed by station_id
         per_station = {}
         for kpi in station_kpis_list:
@@ -80,12 +81,13 @@ class KPICalculator:
                 "avg_wait_time_min": round(kpi.avg_wait_time, 2),
                 "lost_swaps": kpi.lost_swaps,
                 "lost_swaps_pct": round(kpi.lost_swaps_pct, 2),
-                "idle_inventory_pct": round(kpi.avg_charged_inventory, 1),  # Proxy for idle
+                # Proxy for idle
+                "idle_inventory_pct": round(kpi.avg_charged_inventory, 1),
                 "charger_utilization_pct": round(kpi.charger_utilization * 100, 2),
                 "total_arrivals": kpi.total_arrivals,
                 "successful_swaps": kpi.successful_swaps
             }
-        
+
         # Build operational_cost dict (placeholder if not provided)
         if cost_breakdown is not None:
             operational_cost = cost_breakdown.get_operational_cost_dict()
@@ -100,7 +102,7 @@ class KPICalculator:
                     "opportunity": 0.0
                 }
             }
-        
+
         # Format output with exact keys frontend expects
         return {
             # Frontend-expected top-level keys
@@ -112,7 +114,7 @@ class KPICalculator:
             "city_throughput_per_hour": round(city_kpis.throughput, 1),
             "operational_cost": operational_cost,
             "per_station": per_station,
-            
+
             # Legacy format for backward compatibility
             "city_kpis": {
                 "avg_wait_time": round(city_kpis.avg_wait_time, 2),
@@ -140,7 +142,7 @@ class KPICalculator:
                 for kpi in station_kpis_list
             ]
         }
-    
+
     @staticmethod
     def _calculate_station_kpis(
         station_data: Dict[str, Any],
@@ -153,29 +155,37 @@ class KPICalculator:
         swap_events = station_data["swap_events"]
         charge_events = station_data["charge_events"]
         inventory_events = station_data["inventory_events"]
-        
+
         # Basic metrics
         total_arrivals = stats["total_arrivals"]
         successful_swaps = stats["successful_swaps"]
         lost_swaps = stats["rejected_swaps"]
-        lost_swaps_pct = (lost_swaps / total_arrivals * 100) if total_arrivals > 0 else 0.0
-        
+        lost_swaps_pct = (lost_swaps / total_arrivals *
+                          100) if total_arrivals > 0 else 0.0
+
         # Average wait time (already calculated in station)
         avg_wait_time = stats["avg_wait_time"]
-        
-        # Charger utilization (using actual charge duration from config)
+
+        # Get inventory capacity and charger count from stats
+        inventory_capacity = stats.get(
+            "inventory_capacity", 10)  # fallback to 10
+        # chargers = inventory_capacity
+        num_chargers = station_data.get("chargers", inventory_capacity)
+
+        # Charger utilization (using actual charge duration and charger count)
         charger_utilization = KPICalculator._calculate_charger_utilization(
             charge_events,
             simulation_duration,
-            charge_duration
+            charge_duration,
+            num_chargers
         )
-        
+
         # Average charged inventory
         avg_charged_inventory = KPICalculator._calculate_avg_inventory(
             inventory_events,
             simulation_duration
         )
-        
+
         return StationKPIs(
             station_id=station_data["station_id"],
             tier=station_data["tier"],
@@ -185,9 +195,10 @@ class KPICalculator:
             total_arrivals=total_arrivals,
             successful_swaps=successful_swaps,
             charger_utilization=charger_utilization,
-            avg_charged_inventory=avg_charged_inventory
+            avg_charged_inventory=avg_charged_inventory,
+            inventory_capacity=inventory_capacity
         )
-    
+
     @staticmethod
     def _calculate_city_kpis(
         station_kpis: List[StationKPIs],
@@ -206,33 +217,38 @@ class KPICalculator:
                 total_swaps=0,
                 total_lost=0
             )
-        
+
         # Aggregate totals
         total_arrivals = sum(kpi.total_arrivals for kpi in station_kpis)
         total_swaps = sum(kpi.successful_swaps for kpi in station_kpis)
         total_lost = sum(kpi.lost_swaps for kpi in station_kpis)
-        
+
         # Weighted average wait time (by successful swaps)
         total_wait_time = sum(
             kpi.avg_wait_time * kpi.successful_swaps
             for kpi in station_kpis
         )
         avg_wait_time = total_wait_time / total_swaps if total_swaps > 0 else 0.0
-        
+
         # Overall lost swaps percentage
-        lost_swaps_pct = (total_lost / total_arrivals * 100) if total_arrivals > 0 else 0.0
-        
+        lost_swaps_pct = (total_lost / total_arrivals *
+                          100) if total_arrivals > 0 else 0.0
+
         # Average charger utilization
-        charger_utilization = np.mean([kpi.charger_utilization for kpi in station_kpis])
-        
-        # Idle inventory (rough proxy: normalized average charged inventory)
-        # Higher charged inventory relative to capacity suggests excess capacity
-        avg_inventory_values = [kpi.avg_charged_inventory for kpi in station_kpis]
-        idle_inventory_pct = np.mean(avg_inventory_values) if avg_inventory_values else 0.0
-        
+        charger_utilization = np.mean(
+            [kpi.charger_utilization for kpi in station_kpis])
+
+        # Idle inventory percentage: average charged inventory as % of total capacity
+        # This represents how much of the battery capacity is sitting idle (charged but not used)
+        total_avg_charged = sum(
+            kpi.avg_charged_inventory for kpi in station_kpis)
+        total_capacity = sum(kpi.inventory_capacity for kpi in station_kpis)
+        idle_inventory_pct = (
+            total_avg_charged / total_capacity * 100) if total_capacity > 0 else 0.0
+
         # Throughput (successful swaps per hour)
         throughput = total_swaps / duration_hours if duration_hours > 0 else 0.0
-        
+
         # Cost proxy (weighted combination of wait time, lost swaps, and utilization)
         # Higher wait time and lost swaps increase cost
         # Lower utilization increases cost (idle resources)
@@ -241,7 +257,7 @@ class KPICalculator:
             lost_swaps_pct * 2.0 +
             (1 - charger_utilization) * 10.0
         )
-        
+
         return CityKPIs(
             avg_wait_time=avg_wait_time,
             lost_swaps_pct=lost_swaps_pct,
@@ -253,29 +269,42 @@ class KPICalculator:
             total_swaps=total_swaps,
             total_lost=total_lost
         )
-    
+
     @staticmethod
     def _calculate_charger_utilization(
         charge_events: List,
         simulation_duration: float,
-        charge_duration: float = 60.0
+        charge_duration: float = 60.0,
+        num_chargers: int = 1
     ) -> float:
-        """Calculate charger utilization from charge events."""
-        if not charge_events:
+        """Calculate charger utilization from charge events.
+
+        Utilization = (total charging time) / (simulation duration * num_chargers)
+
+        This represents the fraction of total available charger-time that was
+        actually used for charging.
+        """
+        if not charge_events or num_chargers <= 0:
             return 0.0
-        
+
         # Count charge end events (completed charges)
-        charge_ends = [e for e in charge_events if e.event_type == "charge_end"]
+        charge_ends = [
+            e for e in charge_events if e.event_type == "charge_end"]
         completed_charges = len(charge_ends)
-        
-        # Use actual charge duration from config
+
+        # Total charging time = completed charges * charge duration
         total_charging_time = completed_charges * charge_duration
-        
-        # Utilization = total charging time / simulation duration
-        utilization = min(total_charging_time / simulation_duration, 1.0) if simulation_duration > 0 else 0.0
-        
-        return utilization
-    
+
+        # Total available charger time = simulation duration * number of chargers
+        total_available_time = simulation_duration * num_chargers
+
+        # Utilization = fraction of available time used
+        utilization = total_charging_time / \
+            total_available_time if total_available_time > 0 else 0.0
+
+        # Cap at 1.0 (can't exceed 100% utilization)
+        return min(utilization, 1.0)
+
     @staticmethod
     def _calculate_avg_inventory(
         inventory_events: List,
@@ -284,25 +313,24 @@ class KPICalculator:
         """Calculate time-averaged charged inventory."""
         if not inventory_events:
             return 0.0
-        
+
         # Time-weighted average
         total_weighted_inventory = 0.0
-        
+
         for i in range(len(inventory_events) - 1):
             current_event = inventory_events[i]
             next_event = inventory_events[i + 1]
-            
+
             duration = next_event.time - current_event.time
             total_weighted_inventory += current_event.charged_count * duration
-        
+
         # Handle last event (until end of simulation)
         if inventory_events:
             last_event = inventory_events[-1]
             remaining_duration = simulation_duration - last_event.time
             total_weighted_inventory += last_event.charged_count * remaining_duration
-        
-        avg_inventory = total_weighted_inventory / simulation_duration if simulation_duration > 0 else 0.0
-        
-        return avg_inventory
-    
 
+        avg_inventory = total_weighted_inventory / \
+            simulation_duration if simulation_duration > 0 else 0.0
+
+        return avg_inventory

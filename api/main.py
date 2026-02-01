@@ -451,6 +451,7 @@ async def run_scenario_simulation(
             status="completed",
             kpis=kpis,
             timeline=result.get("timeline"),
+            costs=result.get("costs"),
             error=None,
             comparison=comparison
         )

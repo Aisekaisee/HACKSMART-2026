@@ -10,7 +10,14 @@ import {
   TrendingUp,
   DollarSign,
   BarChart3,
+  IndianRupee,
+  Building2,
+  Receipt,
+  PiggyBank,
+  ArrowUpRight,
+  ArrowDownRight,
 } from "lucide-react";
+import type { FinancialData } from "@/types";
 
 export default function RightSidebar() {
   const { simulationResult } = useAppSelector((state) => state.scenarios);
@@ -20,6 +27,7 @@ export default function RightSidebar() {
 
   const cityKpis = simulationResult?.kpis?.city_kpis;
   const baselineKpis = currentProject?.baseline_kpis;
+  const financialData = simulationResult?.costs;
   const selectedStation = stations.find((s) => s.id === selectedStationId);
   const selectedStationKpi = simulationResult?.kpis?.stations?.find(
     (s) => s.station_id === selectedStation?.station_id,
@@ -39,7 +47,13 @@ export default function RightSidebar() {
             value="station"
             className="flex-1 data-[state=active]:bg-secondary data-[state=active]:text-foreground"
           >
-            Station Detail
+            Station
+          </TabsTrigger>
+          <TabsTrigger
+            value="finance"
+            className="flex-1 data-[state=active]:bg-secondary data-[state=active]:text-foreground"
+          >
+            Finance
           </TabsTrigger>
         </TabsList>
 
@@ -107,14 +121,10 @@ export default function RightSidebar() {
                   />
                   <KPICard
                     icon={<DollarSign className="h-4 w-4" />}
-                    title="Cost Proxy"
-                    value={((cityKpis?.cost_proxy || 0) / 1000).toFixed(1)}
-                    unit="K"
-                    baseline={
-                      baselineKpis?.cost_proxy
-                        ? baselineKpis.cost_proxy / 1000
-                        : undefined
-                    }
+                    title="Cost Score"
+                    value={(cityKpis?.cost_proxy || 0).toFixed(1)}
+                    unit=""
+                    baseline={baselineKpis?.cost_proxy}
                     lowerIsBetter
                   />
                 </div>
@@ -321,6 +331,21 @@ export default function RightSidebar() {
               </div>
             )}
           </TabsContent>
+
+          {/* Finance Tab */}
+          <TabsContent value="finance" className="p-4 m-0 space-y-4">
+            {!simulationResult || !financialData ? (
+              <div className="text-center py-12">
+                <IndianRupee className="h-12 w-12 text-muted mx-auto mb-4" />
+                <p className="text-muted-foreground">No financial data yet</p>
+                <p className="text-muted-foreground text-sm mt-1">
+                  Run a simulation to see finances
+                </p>
+              </div>
+            ) : (
+              <FinanceTab financialData={financialData} />
+            )}
+          </TabsContent>
         </div>
       </Tabs>
     </aside>
@@ -414,5 +439,234 @@ function ComparisonRow({
         {change.toFixed(1)}%
       </td>
     </tr>
+  );
+}
+
+// Finance Tab Component
+function FinanceTab({ financialData }: { financialData: FinancialData }) {
+  const formatCurrency = (value: number) => {
+    if (value >= 100000) {
+      return `₹${(value / 100000).toFixed(2)}L`;
+    } else if (value >= 1000) {
+      return `₹${(value / 1000).toFixed(1)}K`;
+    }
+    return `₹${value.toFixed(0)}`;
+  };
+
+  const {
+    capital,
+    operational_24hr,
+    revenue,
+    opportunity,
+    per_swap_economics,
+    summary,
+  } = financialData;
+  const isProfit = summary.gross_profit > 0;
+
+  return (
+    <>
+      {/* Profit Summary Card */}
+      <Card
+        className={`border-2 ${isProfit ? "border-primary/50 bg-primary/5" : "border-destructive/50 bg-destructive/5"}`}
+      >
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              {isProfit ? (
+                <ArrowUpRight className="h-5 w-5 text-primary" />
+              ) : (
+                <ArrowDownRight className="h-5 w-5 text-destructive" />
+              )}
+              <span className="text-sm font-medium">24hr Gross Profit</span>
+            </div>
+            <Badge
+              variant={isProfit ? "default" : "destructive"}
+              className="text-xs"
+            >
+              {summary.profit_margin_pct.toFixed(1)}% margin
+            </Badge>
+          </div>
+          <p
+            className={`text-2xl font-bold ${isProfit ? "text-primary" : "text-destructive"}`}
+          >
+            {isProfit ? "+" : ""}
+            {formatCurrency(summary.gross_profit)}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {summary.successful_swaps.toLocaleString()} successful swaps
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Revenue Card - BatterySmart Pricing */}
+      <Card className="bg-card border-border">
+        <CardHeader className="py-3 px-4">
+          <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+            <Receipt className="h-4 w-4 text-primary" />
+            Revenue (24hr)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-4">
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">
+                Base Swap (₹170 × {summary.successful_swaps})
+              </span>
+              <span className="text-sm font-medium">
+                {formatCurrency(revenue.base_swap)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">
+                Service Charge (₹40 × {summary.successful_swaps})
+              </span>
+              <span className="text-sm font-medium">
+                {formatCurrency(revenue.service_charge)}
+              </span>
+            </div>
+            <div className="border-t border-border pt-2 flex justify-between items-center">
+              <span className="text-sm font-medium">Total Revenue</span>
+              <span className="text-base font-bold text-primary">
+                {formatCurrency(revenue.total)}
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Operational Costs Card */}
+      <Card className="bg-card border-border">
+        <CardHeader className="py-3 px-4">
+          <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-orange-500" />
+            Operating Costs (24hr)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-4">
+          <div className="space-y-2">
+            <CostRow
+              label="Electricity"
+              value={operational_24hr.breakdown.electricity}
+            />
+            <CostRow label="Labor" value={operational_24hr.breakdown.labor} />
+            <CostRow
+              label="Maintenance"
+              value={operational_24hr.breakdown.maintenance}
+            />
+            <CostRow label="Rent" value={operational_24hr.breakdown.rent} />
+            <CostRow
+              label="Swap Operations"
+              value={operational_24hr.breakdown.swap_operations}
+            />
+            <CostRow
+              label="Replenishment"
+              value={operational_24hr.breakdown.replenishment}
+            />
+            <div className="border-t border-border pt-2 flex justify-between items-center">
+              <span className="text-sm font-medium">Total Operating</span>
+              <span className="text-base font-bold text-orange-500">
+                {formatCurrency(operational_24hr.total)}
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Per-Swap Economics */}
+      <Card className="bg-card border-border">
+        <CardHeader className="py-3 px-4">
+          <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+            <PiggyBank className="h-4 w-4 text-emerald-500" />
+            Per-Swap Economics
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-4">
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="p-2 bg-secondary/50 rounded">
+              <p className="text-lg font-bold text-foreground">
+                ₹{per_swap_economics.revenue}
+              </p>
+              <p className="text-xs text-muted-foreground">Revenue</p>
+            </div>
+            <div className="p-2 bg-secondary/50 rounded">
+              <p className="text-lg font-bold text-foreground">
+                ₹{per_swap_economics.cost.toFixed(0)}
+              </p>
+              <p className="text-xs text-muted-foreground">Cost</p>
+            </div>
+            <div className="p-2 bg-primary/10 rounded">
+              <p
+                className={`text-lg font-bold ${per_swap_economics.margin > 0 ? "text-primary" : "text-destructive"}`}
+              >
+                ₹{per_swap_economics.margin.toFixed(0)}
+              </p>
+              <p className="text-xs text-muted-foreground">Margin</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Lost Revenue / Opportunity Cost */}
+      <Card className="bg-card border-border">
+        <CardHeader className="py-3 px-4">
+          <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+            Lost Revenue
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-4">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">
+              {opportunity.lost_swaps} rejected swaps @ ₹210
+            </span>
+            <span className="text-base font-bold text-destructive">
+              -{formatCurrency(opportunity.lost_revenue)}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Capital Investment */}
+      <Card className="bg-card border-border">
+        <CardHeader className="py-3 px-4">
+          <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+            <IndianRupee className="h-4 w-4 text-blue-500" />
+            Capital Investment
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-4">
+          <div className="space-y-2">
+            <CostRow label="Chargers" value={capital.chargers} />
+            <CostRow label="Battery Inventory" value={capital.inventory} />
+            <div className="border-t border-border pt-2 flex justify-between items-center">
+              <span className="text-sm font-medium">Total Investment</span>
+              <span className="text-base font-bold">
+                {formatCurrency(capital.total)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-xs text-muted-foreground">
+              <span>Daily Amortized (1yr)</span>
+              <span>{formatCurrency(capital.daily_amortized)}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </>
+  );
+}
+
+// Cost Row Helper
+function CostRow({ label, value }: { label: string; value: number }) {
+  const formatCurrency = (v: number) => {
+    if (v >= 100000) return `₹${(v / 100000).toFixed(2)}L`;
+    if (v >= 1000) return `₹${(v / 1000).toFixed(1)}K`;
+    return `₹${v.toFixed(0)}`;
+  };
+
+  return (
+    <div className="flex justify-between items-center text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium">{formatCurrency(value)}</span>
+    </div>
   );
 }

@@ -151,6 +151,8 @@ class SimulationRunResponse(BaseModel):
     status: str  # "running", "completed", "failed"
     kpis: Optional[Dict[str, Any]] = None
     timeline: Optional[List[Dict[str, Any]]] = None
+    # Financial data with BatterySmart pricing
+    costs: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
     # Comparison with baseline KPIs
     comparison: Optional[Dict[str, Any]] = None
