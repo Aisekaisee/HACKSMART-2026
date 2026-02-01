@@ -8,12 +8,10 @@ import {
   Battery,
   Zap,
   TrendingUp,
-  DollarSign,
   BarChart3,
   IndianRupee,
   Building2,
   Receipt,
-  PiggyBank,
   ArrowUpRight,
   ArrowDownRight,
   GitCompare,
@@ -640,7 +638,6 @@ function FinanceTab({ financialData }: { financialData: FinancialData }) {
   };
 
   const {
-    capital,
     operational_24hr,
     revenue,
     opportunity,

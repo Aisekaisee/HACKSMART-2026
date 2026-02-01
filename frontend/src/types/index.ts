@@ -175,8 +175,24 @@ export interface SimulationKPIs {
   stations: StationKPI[];
 }
 
-// Simulation Types
+// Simulation Timeline Types (matches backend timeline_recorder.py format)
+export interface TimelineStationSnapshot {
+  station_id: string;
+  timestamp_min: number;
+  queue_length: number;
+  batteries_available: number;
+  chargers_in_use: number;
+  swaps_completed: number;
+  swaps_lost: number;
+}
+
 export interface TimelineFrame {
+  timestamp_min: number;
+  stations: TimelineStationSnapshot[];
+}
+
+// Legacy format (kept for backwards compatibility)
+export interface LegacyTimelineFrame {
   hour: number;
   stations: Record<
     string,

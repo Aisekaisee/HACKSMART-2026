@@ -10,6 +10,10 @@ interface ScenariosState {
   loading: boolean;
   running: boolean;
   error: string | null;
+  // Timeline playback state
+  playbackIndex: number;
+  isPlaying: boolean;
+  playbackSpeed: number; // 1 = normal, 2 = 2x, 0.5 = half speed
 }
 
 const initialState: ScenariosState = {
@@ -21,6 +25,10 @@ const initialState: ScenariosState = {
   loading: false,
   running: false,
   error: null,
+  // Timeline playback initial state
+  playbackIndex: 0,
+  isPlaying: false,
+  playbackSpeed: 1,
 };
 
 const scenariosSlice = createSlice({
@@ -85,6 +93,23 @@ const scenariosSlice = createSlice({
       state.loading = false;
       state.running = false;
       state.error = null;
+      state.playbackIndex = 0;
+      state.isPlaying = false;
+      state.playbackSpeed = 1;
+    },
+    // Timeline playback actions
+    setPlaybackIndex: (state, action: PayloadAction<number>) => {
+      state.playbackIndex = action.payload;
+    },
+    setIsPlaying: (state, action: PayloadAction<boolean>) => {
+      state.isPlaying = action.payload;
+    },
+    setPlaybackSpeed: (state, action: PayloadAction<number>) => {
+      state.playbackSpeed = action.payload;
+    },
+    resetPlayback: (state) => {
+      state.playbackIndex = 0;
+      state.isPlaying = false;
     },
   },
 });
@@ -102,5 +127,10 @@ export const {
   setSimulationRunning,
   setScenariosError,
   clearScenarios,
+  // Timeline playback exports
+  setPlaybackIndex,
+  setIsPlaying,
+  setPlaybackSpeed,
+  resetPlayback,
 } = scenariosSlice.actions;
 export default scenariosSlice.reducer;

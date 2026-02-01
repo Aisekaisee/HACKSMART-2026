@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -17,7 +17,70 @@ import {
 } from "@/features/uiSlice";
 import { Button } from "@/components/ui/button";
 import { X, MapPin } from "lucide-react";
+import TimelinePlayback from "./TimelinePlayback";
 import "leaflet/dist/leaflet.css";
+
+// Inject CSS keyframe animations for markers
+const injectAnimationStyles = () => {
+  const styleId = "station-marker-animations";
+  if (document.getElementById(styleId)) return;
+
+  const style = document.createElement("style");
+  style.id = styleId;
+  style.textContent = `
+    @keyframes pulse-slow {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.15); opacity: 0.85; }
+    }
+    @keyframes pulse-medium {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.8; }
+    }
+    @keyframes pulse-fast {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.25); opacity: 0.75; }
+    }
+    @keyframes pulse-critical {
+      0%, 100% { transform: scale(1); opacity: 1; box-shadow: 0 0 10px currentColor; }
+      50% { transform: scale(1.3); opacity: 0.7; box-shadow: 0 0 20px currentColor; }
+    }
+    @keyframes ripple {
+      0% { transform: scale(1); opacity: 0.6; }
+      100% { transform: scale(3); opacity: 0; }
+    }
+    @keyframes glow {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.3); }
+    }
+    @keyframes queue-bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+    .station-marker-animated {
+      transition: all 0.3s ease-out;
+    }
+    .station-pulse-slow { animation: pulse-slow 3s ease-in-out infinite; }
+    .station-pulse-medium { animation: pulse-medium 2s ease-in-out infinite; }
+    .station-pulse-fast { animation: pulse-fast 1.5s ease-in-out infinite; }
+    .station-pulse-critical { animation: pulse-critical 1s ease-in-out infinite; }
+    .station-glow { animation: glow 2s ease-in-out infinite; }
+    .station-queue-bounce { animation: queue-bounce 0.8s ease-in-out infinite; }
+    .ripple-effect {
+      position: absolute;
+      border-radius: 50%;
+      animation: ripple 1s ease-out forwards;
+      pointer-events: none;
+    }
+    .custom-station-marker {
+      background: transparent !important;
+      border: none !important;
+    }
+  `;
+  document.head.appendChild(style);
+};
+
+// Call once on module load
+injectAnimationStyles();
 
 // Fix for default marker icons in Leaflet with Vite
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
@@ -32,34 +95,127 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-// Custom icon for stations - Minimalistic Circle
-const createStationIcon = (color: string, isSelected: boolean) => {
-  const size = isSelected ? 18 : 12; // Smaller size for circles
-  const innerSize = isSelected ? 8 : 0; // Inner dot for selected state
+// Custom icon for stations - Animated Minimalistic Circle
+interface StationAnimationData {
+  utilization: number;
+  queueLength: number;
+  hasActivity: boolean;
+  chargedInventory: number;
+  inventoryCap: number;
+}
+
+const createStationIcon = (
+  color: string,
+  isSelected: boolean,
+  animationData?: StationAnimationData,
+) => {
+  const baseSize = isSelected ? 18 : 12;
+  const innerSize = isSelected ? 8 : 0;
+
+  // Determine animation class based on utilization
+  let pulseClass = "station-pulse-slow";
+  let glowIntensity = 0.3;
+
+  if (animationData) {
+    const { utilization, queueLength, hasActivity } = animationData;
+
+    if (utilization > 0.9) {
+      pulseClass = "station-pulse-critical";
+      glowIntensity = 0.6;
+    } else if (utilization > 0.7) {
+      pulseClass = "station-pulse-fast";
+      glowIntensity = 0.5;
+    } else if (utilization > 0.5) {
+      pulseClass = "station-pulse-medium";
+      glowIntensity = 0.4;
+    }
+
+    // Add bounce if there's a queue
+    if (queueLength > 0) {
+      pulseClass += " station-queue-bounce";
+    }
+
+    // Add glow if there's activity
+    if (hasActivity) {
+      pulseClass += " station-glow";
+    }
+  }
+
+  // Size scales with queue length
+  const queueBonus = animationData?.queueLength
+    ? Math.min(animationData.queueLength * 1.5, 8)
+    : 0;
+  const size = baseSize + queueBonus;
+
+  // Inventory indicator ring (shows battery level)
+  let inventoryRing = "";
+  if (animationData && animationData.inventoryCap > 0) {
+    const inventoryPct =
+      animationData.chargedInventory / animationData.inventoryCap;
+    const ringColor =
+      inventoryPct > 0.5
+        ? "#10b981"
+        : inventoryPct > 0.2
+          ? "#f59e0b"
+          : "#ef4444";
+    const ringOpacity = 0.6;
+    inventoryRing = `
+      <div style="
+        position: absolute;
+        width: ${size + 8}px;
+        height: ${size + 8}px;
+        border: 2px solid ${ringColor};
+        border-radius: 50%;
+        opacity: ${ringOpacity};
+        top: -4px;
+        left: -4px;
+        background: conic-gradient(${ringColor} ${inventoryPct * 360}deg, transparent ${inventoryPct * 360}deg);
+        mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #fff calc(100% - 2px));
+        -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #fff calc(100% - 2px));
+      "></div>
+    `;
+  }
+
+  // Ripple effect container for swap activity
+  const rippleEffect = animationData?.hasActivity
+    ? `<div class="ripple-effect" style="
+        width: ${size}px;
+        height: ${size}px;
+        background: ${color};
+        top: 0;
+        left: 0;
+      "></div>`
+    : "";
 
   return L.divIcon({
     className: "custom-station-marker",
     html: `
-      <div style="position: relative; display: flex; justify-content: center; align-items: center; width: ${size}px; height: ${size}px;">
-        <div style="
+      <div class="station-marker-animated" style="position: relative; display: flex; justify-content: center; align-items: center; width: ${size}px; height: ${size}px;">
+        ${inventoryRing}
+        ${rippleEffect}
+        <div class="${pulseClass}" style="
           width: ${size}px;
           height: ${size}px;
           background-color: ${color};
-          border: 1px solid white;
+          border: 2px solid white;
           border-radius: 50%;
-          box-shadow: 0 0 10px ${color}80;
+          box-shadow: 0 0 ${10 + glowIntensity * 20}px ${color}${Math.round(
+            glowIntensity * 255,
+          )
+            .toString(16)
+            .padStart(2, "0")};
           display: flex;
           justify-content: center;
           align-items: center;
-          transition: all 0.2s ease-in-out;
+          color: ${color};
         ">
           ${isSelected ? `<div style="width: ${innerSize}px; height: ${innerSize}px; background-color: white; border-radius: 50%;"></div>` : ""}
         </div>
-        ${isSelected ? `<div style="position: absolute; width: ${size * 2}px; height: ${size * 2}px; background: ${color}; opacity: 0.2; border-radius: 50%; filter: blur(4px); z-index: -1;"></div>` : ""}
+        ${isSelected ? `<div style="position: absolute; width: ${size * 2.5}px; height: ${size * 2.5}px; background: ${color}; opacity: 0.15; border-radius: 50%; filter: blur(8px); z-index: -1;"></div>` : ""}
       </div>
     `,
     iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2], // Center of circle
+    iconAnchor: [size / 2, size / 2],
     popupAnchor: [0, -size / 2],
   });
 };
@@ -119,13 +275,75 @@ function LocationPickerHandler({
   return null;
 }
 
+// Station animation data based on timeline
+interface StationAnimationData {
+  utilization: number;
+  queueLength: number;
+  hasActivity: boolean;
+  chargedInventory: number;
+  inventoryCap: number;
+}
+
 export default function SimulationMap() {
   const dispatch = useAppDispatch();
   const { stations } = useAppSelector((state) => state.stations);
   const { selectedStationId, isPickingLocation, pickingForModal } =
     useAppSelector((state) => state.ui);
-  const { simulationResult, pendingInterventions, activeInterventions } =
-    useAppSelector((state) => state.scenarios);
+  const {
+    simulationResult,
+    pendingInterventions,
+    activeInterventions,
+    playbackIndex,
+  } = useAppSelector((state) => state.scenarios);
+
+  // Get current timeline frame based on playback index
+  const timeline = simulationResult?.timeline || [];
+  const currentFrame = timeline[playbackIndex] || null;
+  const prevFrame = playbackIndex > 0 ? timeline[playbackIndex - 1] : null;
+
+  // Memoize station animation data from current timeline frame
+  const stationAnimationMap = useMemo(() => {
+    const map: Record<string, StationAnimationData> = {};
+
+    if (!currentFrame || !currentFrame.stations) return map;
+
+    // Backend sends stations as array
+    for (const stationData of currentFrame.stations) {
+      const stationId = stationData.station_id;
+
+      // Find station to get inventory capacity
+      const station = stations.find((s) => s.station_id === stationId);
+      const inventoryCap = station?.inventory_cap || 50;
+
+      // Find KPI for utilization
+      const stationKpi = simulationResult?.kpis?.stations?.find(
+        (s) => s.station_id === stationId,
+      );
+
+      // Calculate activity by comparing with previous frame
+      let hasActivity = false;
+      if (prevFrame && prevFrame.stations) {
+        const prevStationData = prevFrame.stations.find(
+          (s) => s.station_id === stationId,
+        );
+        if (prevStationData) {
+          hasActivity =
+            stationData.swaps_completed > prevStationData.swaps_completed ||
+            stationData.queue_length !== prevStationData.queue_length;
+        }
+      }
+
+      map[stationId] = {
+        utilization: stationKpi?.charger_utilization || 0,
+        queueLength: stationData.queue_length || 0,
+        hasActivity,
+        chargedInventory: stationData.batteries_available || 0,
+        inventoryCap,
+      };
+    }
+
+    return map;
+  }, [currentFrame, prevFrame, stations, simulationResult?.kpis?.stations]);
 
   // Handle location picked on map
   const handleLocationPicked = (lat: number, lng: number) => {
@@ -169,23 +387,34 @@ export default function SimulationMap() {
     }
   };
 
-  // Get utilization color for a station
+  // Get utilization color for a station (uses live timeline data when available)
   const getStationColor = (stationId: string) => {
+    // First check live timeline data for dynamic coloring
+    const animData = stationAnimationMap[stationId];
+    if (animData) {
+      const utilization = animData.utilization;
+      if (utilization > 0.9) return "#ef4444"; // Red - overutilized
+      if (utilization > 0.7) return "#f59e0b"; // Orange - high
+      if (utilization > 0.5) return "#10b981"; // Green - good
+      return "#3b82f6"; // Blue - low
+    }
+
+    // Fallback to KPI data
     if (!simulationResult?.kpis?.stations) {
-      return "#10b981"; // Default Emerald Green (Primary-ish)
+      return "#10b981"; // Default Emerald Green
     }
 
     const stationKpi = simulationResult.kpis.stations.find(
       (s) => s.station_id === stationId,
     );
 
-    if (!stationKpi) return "#10b981"; // Default
+    if (!stationKpi) return "#10b981";
 
     const utilization = stationKpi.charger_utilization;
-    if (utilization > 0.9) return "#ef4444"; // Red - overutilized
-    if (utilization > 0.7) return "#f59e0b"; // Orange - high
-    if (utilization > 0.5) return "#10b981"; // Green - good
-    return "#3b82f6"; // Blue - low (maybe change low to gray or teal?)
+    if (utilization > 0.9) return "#ef4444";
+    if (utilization > 0.7) return "#f59e0b";
+    if (utilization > 0.5) return "#10b981";
+    return "#3b82f6";
   };
 
   // Default center (Delhi)
@@ -218,12 +447,13 @@ export default function SimulationMap() {
         {stations.map((station) => {
           const isSelected = station.id === selectedStationId;
           const color = getStationColor(station.station_id);
+          const animationData = stationAnimationMap[station.station_id];
 
           return (
             <Marker
               key={station.id}
               position={[station.latitude, station.longitude]}
-              icon={createStationIcon(color, isSelected)}
+              icon={createStationIcon(color, isSelected, animationData)}
               eventHandlers={{
                 click: () => dispatch(setSelectedStation(station.id)),
               }}
@@ -249,6 +479,24 @@ export default function SimulationMap() {
                         {station.inventory_cap}
                       </span>
                     </div>
+                    {animationData && (
+                      <>
+                        <div>
+                          <span className="text-muted-foreground">Queue:</span>{" "}
+                          <span className="font-medium text-amber-500">
+                            {animationData.queueLength}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">
+                            Batteries:
+                          </span>{" "}
+                          <span className="font-medium text-emerald-500">
+                            {animationData.chargedInventory}
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </Popup>
@@ -397,6 +645,9 @@ export default function SimulationMap() {
           </div>
         </div>
       )}
+
+      {/* Timeline Playback Controls */}
+      <TimelinePlayback />
     </div>
   );
 }

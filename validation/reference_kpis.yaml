@@ -1,14 +1,20 @@
 # Reference KPIs for baseline validation
-# These are expected values for the baseline_example.yaml configuration
-# With charge_duration=60min (1 hour fast charging) and increased station capacity
+# Expected values for the 8-station Delhi NCR network
+# Targeting moderate, realistic operational metrics
 
 city_kpis:
-  avg_wait_time: 5.0       # minutes (±15% tolerance)
-  lost_swaps_pct: 22.0     # percentage (±15% tolerance)
-  charger_utilization: 0.69  # 0-1 scale (±10% tolerance)
-  idle_inventory_pct: 26.0   # percentage of capacity that is charged/idle
-  throughput: 41.0         # swaps per hour
-  cost_proxy: 50.0         # cost score (lower is better)
+  avg_wait_time: 4.5       # minutes - good service level (±20% tolerance)
+  lost_swaps_pct: 12.0     # ~12% lost - room for improvement (±25% tolerance)
+  charger_utilization: 0.72  # 72% - healthy utilization (±15% tolerance)
+  idle_inventory_pct: 28.0   # 28% buffer stock
+  throughput: 52.0         # ~52 swaps/hour across network
+  cost_proxy: 35.0         # balanced cost score
+
+# Expected scenario impact ranges:
+# - Weather (rain): lost_swaps 12% → 18%, wait 4.5 → 6.5 min
+# - Festival/IPL: throughput 52 → 68, lost 12% → 20%
+# - Add 2 stations: lost 12% → 7%, revenue +₹25K/day
+# - Reduce capacity: utilization 72% → 88%, lost 12% → 25%
 
 # Note: Validation focuses on wait_time, lost_swaps_pct, and charger_utilization
 # Other metrics are informational
