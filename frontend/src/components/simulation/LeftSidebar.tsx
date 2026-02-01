@@ -14,9 +14,10 @@ import {
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -44,6 +45,8 @@ import {
   ChevronDown,
   Zap,
   CheckCircle2,
+  Settings,
+  Layers,
 } from "lucide-react";
 import AddStationModal from "./AddStationModal";
 import EditStationModal from "./EditStationModal";
@@ -165,314 +168,337 @@ export default function LeftSidebar() {
   };
 
   return (
-    <aside className="w-80 border-r border-border bg-background flex flex-col overflow-hidden shrink-0">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Station Management */}
-        <Card className="bg-card border-border">
-          <CardHeader className="py-3 px-4">
-            <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-primary" />
-              Station Management
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4 space-y-3">
-            <div className="text-sm text-muted-foreground">
-              {stations.length} station{stations.length !== 1 ? "s" : ""}{" "}
-              configured
-            </div>
+    <aside className="w-96 border-r border-border bg-background flex flex-col h-full overflow-hidden shadow-xl z-10 shrink-0">
+      {/* Header */}
+      <div className="p-4 border-b border-border bg-card/50 backdrop-blur-sm">
+        <h2 className="font-semibold text-lg text-foreground flex items-center gap-2">
+          <Settings className="h-5 w-5 text-primary" />
+          Configuration
+        </h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          Setup simulation parameters and scenarios
+        </p>
+      </div>
 
-            {/* Baseline stations warning */}
-            {stations.some(
-              (s) => s.id.startsWith("baseline-") || s.isBaseline,
-            ) && (
-              <div className="text-xs text-amber-400/90 bg-amber-400/10 p-2 rounded border border-amber-400/20">
-                ⚠️ Baseline stations (read-only). Add new stations to
-                edit/remove.
-              </div>
-            )}
+      {/* Main Scrollable Content */}
+      <div className="flex-1 overflow-y-auto bg-card/30">
+        <Tabs defaultValue="stations" className="h-full flex flex-col">
+          <div className="px-4 pt-4">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="stations" className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" /> Stations
+              </TabsTrigger>
+              <TabsTrigger
+                value="interventions"
+                className="flex items-center gap-2"
+              >
+                <Layers className="h-4 w-4" /> Scenarios
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-            {/* Station list - scrollable */}
-            {stations.length > 0 && (
-              <div className="max-h-32 overflow-y-auto space-y-1">
-                {stations.map((station) => (
-                  <div
-                    key={station.id}
-                    className="text-xs text-muted-foreground py-1 px-2 rounded bg-secondary/50 flex justify-between items-center"
-                  >
-                    <span className="flex items-center gap-1">
-                      {station.station_id}
-                      {(station.id.startsWith("baseline-") ||
-                        station.isBaseline) && (
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] px-1 py-0 h-4 border-amber-400/50 text-amber-400/80"
-                        >
-                          baseline
-                        </Badge>
-                      )}
-                    </span>
-                    <span className="text-muted-foreground">
-                      ({station.latitude.toFixed(2)},{" "}
-                      {station.longitude.toFixed(2)})
+          {/* Stations Tab */}
+          <TabsContent
+            value="stations"
+            className="flex-1 p-4 space-y-4 data-[state=inactive]:hidden"
+          >
+            <Card className="bg-card border-border shadow-none">
+              <CardContent className="p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-foreground">
+                    Active Stations
+                  </span>
+                  <Badge variant="secondary" className="bg-secondary/50">
+                    {stations.length}
+                  </Badge>
+                </div>
+
+                {stations.some(
+                  (s) => s.id.startsWith("baseline-") || s.isBaseline,
+                ) && (
+                  <div className="text-xs text-amber-400 bg-amber-400/10 p-3 rounded-lg border border-amber-400/20 flex items-start gap-2">
+                    <span className="text-lg">⚠️</span>
+                    <span className="leading-5">
+                      Baseline stations are read-only used for comparison. Add
+                      new stations to modify network.
                     </span>
                   </div>
-                ))}
-              </div>
-            )}
+                )}
 
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                className="flex-1 hover:bg-secondary hover:text-foreground"
-                onClick={() => dispatch(openModal("addStation"))}
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                Add
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="flex-1 hover:bg-secondary hover:text-foreground"
-                onClick={() => dispatch(openModal("editStation"))}
-                disabled={stations.length === 0}
-              >
-                <Edit className="h-3 w-3 mr-1" />
-                Edit
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="flex-1 hover:bg-secondary hover:text-foreground"
-                onClick={() => dispatch(openModal("removeStation"))}
-                disabled={stations.length === 0}
-              >
-                <Trash2 className="h-3 w-3 mr-1" />
-                Remove
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Separator className="bg-border" />
-
-        {/* Interventions */}
-        <Card className="bg-card border-border">
-          <CardHeader className="py-3 px-4">
-            <CardTitle className="text-sm font-medium text-foreground flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-primary" />
-                Interventions
-              </span>
-              <Badge variant="outline" className="text-muted-foreground">
-                {pendingInterventions.length}
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4 space-y-3">
-            {/* Pending interventions list */}
-            {pendingInterventions.length > 0 && (
-              <div className="space-y-2">
-                {pendingInterventions.map((intervention, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-2 rounded bg-secondary/50 border border-border"
-                  >
-                    <div className="flex items-center gap-2">
-                      {intervention.type === "weather_demand" && (
-                        <Cloud className="h-3 w-3 text-primary" />
-                      )}
-                      {intervention.type === "event_demand" && (
-                        <Calendar className="h-3 w-3 text-chart-1" />
-                      )}
-                      {intervention.type === "replenishment_policy" && (
-                        <RefreshCcw className="h-3 w-3 text-chart-2" />
-                      )}
-                      <span className="text-xs text-foreground">
-                        {getInterventionLabel(intervention)}
-                      </span>
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+                  {stations.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground text-sm border-2 border-dashed border-border rounded-lg">
+                      No stations configured
                     </div>
+                  ) : (
+                    stations.map((station) => (
+                      <div
+                        key={station.id}
+                        className="group flex items-center justify-between p-3 rounded-lg bg-secondary/30 border border-border/50 hover:border-primary/50 transition-colors"
+                      >
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-sm font-medium text-foreground flex items-center gap-2">
+                            {station.station_id}
+                            {(station.id.startsWith("baseline-") ||
+                              station.isBaseline) && (
+                              <span className="text-[10px] text-amber-500 bg-amber-500/10 px-1 py-0.5 rounded">
+                                Base
+                              </span>
+                            )}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {station.latitude.toFixed(3)},{" "}
+                            {station.longitude.toFixed(3)}
+                          </span>
+                        </div>
+                        <div className="text-xs font-mono bg-background/50 px-2 py-1 rounded text-foreground">
+                          {station.chargers} chgs
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 pt-2">
+                  <Button
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={() => dispatch(openModal("addStation"))}
+                  >
+                    <Plus className="h-3 w-3 mr-1.5" />
+                    Add
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full text-xs"
+                    onClick={() => dispatch(openModal("editStation"))}
+                    disabled={stations.length === 0}
+                  >
+                    <Edit className="h-3 w-3 mr-1.5" />
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full text-xs text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
+                    onClick={() => dispatch(openModal("removeStation"))}
+                    disabled={stations.length === 0}
+                  >
+                    <Trash2 className="h-3 w-3 mr-1.5" />
+                    Del
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Interventions Tab */}
+          <TabsContent
+            value="interventions"
+            className="flex-1 p-4 space-y-4 data-[state=inactive]:hidden"
+          >
+            <div className="space-y-4">
+              {/* Controls */}
+              <Card className="bg-card border-border shadow-none">
+                <CardContent className="p-4 space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Duration
+                    </label>
+                    <Select value={duration} onValueChange={setDuration}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="24">24 hours (Day)</SelectItem>
+                        <SelectItem value="168">1 week (168h)</SelectItem>
+                        <SelectItem value="720">1 month (720h)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Interventions List */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between px-1">
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Active Interventions
+                  </label>
+                  <Badge variant="outline" className="text-xs">
+                    {pendingInterventions.length}
+                  </Badge>
+                </div>
+
+                {pendingInterventions.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground text-sm border-2 border-dashed border-border rounded-lg bg-card/50">
+                    No interventions added
+                    <p className="text-xs opacity-60 mt-1">
+                      Add events to simulate demand spikes
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {pendingInterventions.map((intervention, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 rounded-lg bg-card border border-border shadow-sm group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`p-2 rounded-md ${
+                              intervention.type === "weather_demand"
+                                ? "bg-blue-500/10 text-blue-500"
+                                : intervention.type === "event_demand"
+                                  ? "bg-purple-500/10 text-purple-500"
+                                  : "bg-orange-500/10 text-orange-500"
+                            }`}
+                          >
+                            {intervention.type === "weather_demand" && (
+                              <Cloud className="h-4 w-4" />
+                            )}
+                            {intervention.type === "event_demand" && (
+                              <Calendar className="h-4 w-4" />
+                            )}
+                            {intervention.type === "replenishment_policy" && (
+                              <RefreshCcw className="h-4 w-4" />
+                            )}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-foreground">
+                              {getInterventionLabel(intervention)}
+                            </span>
+                            <span className="text-xs text-muted-foreground capitalize">
+                              {intervention.type.replace("_", " ")}
+                            </span>
+                          </div>
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() =>
+                            dispatch(removePendingIntervention(index))
+                          }
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Add form area */}
+              {showInterventionForm && interventionType ? (
+                <div className="rounded-lg border border-border bg-card p-4 shadow-lg animate-in fade-in slide-in-from-bottom-2">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-semibold text-sm">
+                      Configure Intervention
+                    </h3>
                     <Button
-                      size="sm"
                       variant="ghost"
-                      className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                      onClick={() => dispatch(removePendingIntervention(index))}
+                      size="sm"
+                      onClick={() => setShowInterventionForm(false)}
+                      className="h-6 w-6 p-0 rounded-full"
                     >
                       <X className="h-3 w-3" />
                     </Button>
                   </div>
-                ))}
-              </div>
-            )}
-
-            {/* Intervention form */}
-            {showInterventionForm && interventionType && (
-              <InterventionForm
-                type={interventionType}
-                onSubmit={handleInterventionSubmit}
-                onCancel={() => {
-                  setShowInterventionForm(false);
-                  setInterventionType(null);
-                }}
-              />
-            )}
-
-            {/* Add intervention dropdown */}
-            {!showInterventionForm && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full hover:bg-secondary hover:text-foreground"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Intervention
-                    <ChevronDown className="h-4 w-4 ml-auto" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-popover border-border">
-                  <DropdownMenuItem
-                    className="text-popover-foreground focus:bg-secondary cursor-pointer"
-                    onClick={() => handleAddIntervention("weather_demand")}
-                  >
-                    <Cloud className="h-4 w-4 mr-2 text-primary" />
-                    Weather Event
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-popover-foreground focus:bg-secondary cursor-pointer"
-                    onClick={() => handleAddIntervention("event_demand")}
-                  >
-                    <Calendar className="h-4 w-4 mr-2 text-chart-1" />
-                    Special Event
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-popover-foreground focus:bg-secondary cursor-pointer"
-                    onClick={() =>
-                      handleAddIntervention("replenishment_policy")
-                    }
-                  >
-                    <RefreshCcw className="h-4 w-4 mr-2 text-chart-2" />
-                    Replenishment Policy
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </CardContent>
-        </Card>
-
-        <Separator className="bg-border" />
-
-        {/* Simulation Controls */}
-        <Card className="bg-card border-border">
-          <CardHeader className="py-3 px-4">
-            <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
-              <Play className="h-4 w-4 text-primary" />
-              Simulation Controls
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4 space-y-3">
-            <div className="space-y-2">
-              <label className="text-xs text-muted-foreground">Duration</label>
-              <Select value={duration} onValueChange={setDuration}>
-                <SelectTrigger className="bg-background border-border text-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border-border">
-                  <SelectItem
-                    value="24"
-                    className="text-foreground focus:bg-secondary cursor-pointer"
-                  >
-                    24 hours
-                  </SelectItem>
-                  <SelectItem
-                    value="168"
-                    className="text-foreground focus:bg-secondary cursor-pointer"
-                  >
-                    1 week (168h)
-                  </SelectItem>
-                  <SelectItem
-                    value="720"
-                    className="text-foreground focus:bg-secondary cursor-pointer"
-                  >
-                    1 month (720h)
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Baseline Status & Run */}
-            <div className="p-3 bg-secondary/20 rounded-lg border border-border space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">
-                  Baseline Status
-                </span>
-                {hasBaselineKPIs ? (
-                  <Badge
-                    variant="outline"
-                    className="bg-green-900/30 text-green-400 border-green-700"
-                  >
-                    <CheckCircle2 className="h-3 w-3 mr-1" />
-                    Ready
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="outline"
-                    className="bg-yellow-900/30 text-yellow-400 border-yellow-700"
-                  >
-                    Not Run
-                  </Badge>
-                )}
-              </div>
-              <Button
-                variant="outline"
-                className="w-full hover:bg-secondary hover:text-foreground"
-                onClick={handleRunBaseline}
-                disabled={runningBaseline || stations.length === 0}
-              >
-                {runningBaseline ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Running Baseline...
-                  </>
-                ) : (
-                  <>
-                    <Zap className="h-4 w-4 mr-2" />
-                    {hasBaselineKPIs ? "Re-run Baseline" : "Run Baseline"}
-                  </>
-                )}
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                Run baseline first to enable comparison with scenarios
-              </p>
-            </div>
-
-            <Separator className="bg-border" />
-
-            <Button
-              className="w-full" // Removed direct color, defaults to primary
-              onClick={handleRunSimulation}
-              disabled={running || stations.length === 0}
-            >
-              {running ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Running Simulation...
-                </>
+                  <InterventionForm
+                    type={interventionType}
+                    onSubmit={handleInterventionSubmit}
+                    onCancel={() => {
+                      setShowInterventionForm(false);
+                      setInterventionType(null);
+                    }}
+                  />
+                </div>
               ) : (
-                <>
-                  <Play className="h-4 w-4 mr-2" />
-                  Run Scenario Simulation
-                </>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full border-dashed border-border hover:border-primary/50 hover:bg-primary/5 text-muted-foreground hover:text-primary"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add New Intervention
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem
+                      onClick={() => handleAddIntervention("weather_demand")}
+                    >
+                      <Cloud className="h-4 w-4 mr-2 text-blue-500" />
+                      Weather Event
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleAddIntervention("event_demand")}
+                    >
+                      <Calendar className="h-4 w-4 mr-2 text-purple-500" />
+                      Special Event
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        handleAddIntervention("replenishment_policy")
+                      }
+                    >
+                      <RefreshCcw className="h-4 w-4 mr-2 text-orange-500" />
+                      Replenishment Policy
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
-            </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
 
-            {stations.length === 0 && (
-              <p className="text-xs text-muted-foreground text-center">
-                Add at least one station to run a simulation
-              </p>
+      {/* Fixed Footer Actions */}
+      <div className="p-4 border-t border-border bg-card/80 backdrop-blur-md space-y-3">
+        {/* Baseline Status */}
+        <div className="flex items-center justify-between text-xs px-1">
+          <span className="text-muted-foreground">Baseline Status:</span>
+          {hasBaselineKPIs ? (
+            <span className="flex items-center text-green-500 font-medium">
+              <CheckCircle2 className="h-3 w-3 mr-1" /> Ready
+            </span>
+          ) : (
+            <span className="text-amber-500 font-medium">Not Run</span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant="outline"
+            size="lg"
+            className="w-full text-xs font-semibold h-10"
+            onClick={handleRunBaseline}
+            disabled={runningBaseline || stations.length === 0}
+          >
+            {runningBaseline ? (
+              <Loader2 className="h-3 w-3 animate-spin mr-1" />
+            ) : (
+              <Zap className="h-3 w-3 mr-1 text-amber-500" />
             )}
-          </CardContent>
-        </Card>
+            Run Baseline
+          </Button>
+
+          <Button
+            size="lg"
+            className="w-full text-xs font-semibold h-10 bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_15px_rgba(34,197,94,0.3)]"
+            onClick={handleRunSimulation}
+            disabled={running || stations.length === 0}
+          >
+            {running ? (
+              <Loader2 className="h-3 w-3 animate-spin mr-1" />
+            ) : (
+              <Play className="h-3 w-3 mr-1 fill-current" />
+            )}
+            Simulate
+          </Button>
+        </div>
       </div>
 
       {/* Station Modals */}

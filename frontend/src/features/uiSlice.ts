@@ -20,7 +20,7 @@ interface UIState {
   };
   // Location picking state
   isPickingLocation: boolean;
-  pickingForModal: "addStation" | "editStation" | null;
+  pickingForModal: "addStation" | "editStation" | "eventLocation" | null;
   pickedLocation: PickedLocation | null;
 }
 
@@ -73,27 +73,41 @@ const uiSlice = createSlice({
     // Location picking actions
     startLocationPicking: (
       state,
-      action: PayloadAction<"addStation" | "editStation">,
+      action: PayloadAction<"addStation" | "editStation" | "eventLocation">,
     ) => {
       state.isPickingLocation = true;
       state.pickingForModal = action.payload;
       state.pickedLocation = null;
-      // Close the modal while picking
-      state.modals[action.payload] = false;
+      // Close the appropriate modal while picking
+      if (action.payload === "addStation") {
+        state.modals.addStation = false;
+      } else if (action.payload === "editStation") {
+        state.modals.editStation = false;
+      } else if (action.payload === "eventLocation") {
+        state.modals.addIntervention = false;
+      }
     },
     setPickedLocation: (state, action: PayloadAction<PickedLocation>) => {
       state.pickedLocation = action.payload;
       state.isPickingLocation = false;
-      // Reopen the modal
-      if (state.pickingForModal) {
-        state.modals[state.pickingForModal] = true;
+      // Reopen the appropriate modal
+      if (state.pickingForModal === "addStation") {
+        state.modals.addStation = true;
+      } else if (state.pickingForModal === "editStation") {
+        state.modals.editStation = true;
+      } else if (state.pickingForModal === "eventLocation") {
+        state.modals.addIntervention = true;
       }
     },
     cancelLocationPicking: (state) => {
       state.isPickingLocation = false;
-      // Reopen the modal without setting location
-      if (state.pickingForModal) {
-        state.modals[state.pickingForModal] = true;
+      // Reopen the appropriate modal without setting location
+      if (state.pickingForModal === "addStation") {
+        state.modals.addStation = true;
+      } else if (state.pickingForModal === "editStation") {
+        state.modals.editStation = true;
+      } else if (state.pickingForModal === "eventLocation") {
+        state.modals.addIntervention = true;
       }
       state.pickingForModal = null;
     },

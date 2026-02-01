@@ -32,23 +32,35 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-// Custom icon for stations - SVG Pin
+// Custom icon for stations - Minimalistic Circle
 const createStationIcon = (color: string, isSelected: boolean) => {
-  const size = isSelected ? 32 : 24;
+  const size = isSelected ? 18 : 12; // Smaller size for circles
+  const innerSize = isSelected ? 8 : 0; // Inner dot for selected state
+
   return L.divIcon({
     className: "custom-station-marker",
     html: `
-      <div style="position: relative; display: flex; justify-content: center; align-items: center;">
-        <svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${color}" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-          <circle cx="12" cy="10" r="3" fill="white"></circle>
-        </svg>
-        ${isSelected ? `<div style="position: absolute; width: ${size}px; height: ${size}px; background: ${color}; opacity: 0.3; border-radius: 50%; filter: blur(4px); z-index: -1;"></div>` : ""}
+      <div style="position: relative; display: flex; justify-content: center; align-items: center; width: ${size}px; height: ${size}px;">
+        <div style="
+          width: ${size}px;
+          height: ${size}px;
+          background-color: ${color};
+          border: 1px solid white;
+          border-radius: 50%;
+          box-shadow: 0 0 10px ${color}80;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          transition: all 0.2s ease-in-out;
+        ">
+          ${isSelected ? `<div style="width: ${innerSize}px; height: ${innerSize}px; background-color: white; border-radius: 50%;"></div>` : ""}
+        </div>
+        ${isSelected ? `<div style="position: absolute; width: ${size * 2}px; height: ${size * 2}px; background: ${color}; opacity: 0.2; border-radius: 50%; filter: blur(4px); z-index: -1;"></div>` : ""}
       </div>
     `,
     iconSize: [size, size],
-    iconAnchor: [size / 2, size], // Tip of pin
-    popupAnchor: [0, -size],
+    iconAnchor: [size / 2, size / 2], // Center of circle
+    popupAnchor: [0, -size / 2],
   });
 };
 
@@ -142,6 +154,20 @@ export default function SimulationMap() {
   const locationBasedInterventions = displayInterventions.filter(
     (i) => i.type === "event_demand" && i.params.lat && i.params.lon,
   );
+
+  // Get picking mode label
+  const getPickingModeLabel = () => {
+    switch (pickingForModal) {
+      case "addStation":
+        return "new station";
+      case "editStation":
+        return "station";
+      case "eventLocation":
+        return "event";
+      default:
+        return "location";
+    }
+  };
 
   // Get utilization color for a station
   const getStationColor = (stationId: string) => {
@@ -346,9 +372,7 @@ export default function SimulationMap() {
                   Click on the map to select location
                 </p>
                 <p className="text-muted-foreground text-xs">
-                  {pickingForModal === "addStation"
-                    ? "Adding new station"
-                    : "Editing station location"}
+                  Placing {getPickingModeLabel()} location
                 </p>
               </div>
               <Button

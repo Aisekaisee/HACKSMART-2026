@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import { MapPin } from "lucide-react";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { startLocationPicking, clearPickedLocation } from "@/features/uiSlice";
 import type { InterventionItem, InterventionType } from "@/types";
 
 interface InterventionFormProps {
@@ -24,6 +27,11 @@ export default function InterventionForm({
   onSubmit,
   onCancel,
 }: InterventionFormProps) {
+  const dispatch = useAppDispatch();
+  const { pickedLocation, pickingForModal } = useAppSelector(
+    (state) => state.ui,
+  );
+
   // Weather intervention state
   const [weatherCondition, setWeatherCondition] = useState("rain");
   const [weatherMultiplier, setWeatherMultiplier] = useState(0.8);
@@ -41,6 +49,20 @@ export default function InterventionForm({
 
   // Replenishment intervention state
   const [replenishmentPolicy, setReplenishmentPolicy] = useState("reactive");
+
+  // Update event location when picked from map
+  useEffect(() => {
+    if (pickedLocation && pickingForModal === "eventLocation") {
+      setEventLat(pickedLocation.lat);
+      setEventLon(pickedLocation.lng);
+      dispatch(clearPickedLocation());
+    }
+  }, [pickedLocation, pickingForModal, dispatch]);
+
+  // Handle pick location from map
+  const handlePickLocation = () => {
+    dispatch(startLocationPicking("eventLocation"));
+  };
 
   const handleSubmit = () => {
     let intervention: InterventionItem;
@@ -200,6 +222,17 @@ export default function InterventionForm({
                 />
               </div>
             </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handlePickLocation}
+              className="w-full h-8 text-xs"
+            >
+              <MapPin className="h-3 w-3 mr-1" />
+              Pick Location on Map
+            </Button>
 
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">
