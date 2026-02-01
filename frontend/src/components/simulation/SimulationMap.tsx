@@ -501,7 +501,7 @@ export default function SimulationMap() {
   const defaultZoom = 11;
 
   return (
-    <div className="absolute inset-0 bg-background">
+    <div className="absolute inset-0 bg-background" data-tutorial="simulation-map">
       <MapContainer
         center={defaultCenter}
         zoom={defaultZoom}

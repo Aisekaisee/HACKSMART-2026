@@ -34,7 +34,7 @@ export default function RightSidebar() {
   );
 
   return (
-    <aside className="w-96 border-l border-border bg-background flex flex-col overflow-hidden shrink-0 shadow-xl z-10">
+    <aside className="w-96 border-l border-border bg-background flex flex-col overflow-hidden shrink-0 shadow-xl z-10" data-tutorial="analytics-panel">
       {/* Header */}
       <div className="p-4 border-b border-border bg-card/50 backdrop-blur-sm">
         <h2 className="font-semibold text-lg text-foreground flex items-center gap-2">

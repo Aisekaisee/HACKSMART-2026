@@ -196,6 +196,7 @@ export default function TimelinePlayback() {
     <div
       ref={dragRef}
       className="absolute bottom-4 left-1/2 z-[1000]"
+      data-tutorial="timeline-hint"
       style={{
         transform: `translate(calc(-50% + ${position.x}px), ${position.y}px)`,
         cursor: isDragging ? "grabbing" : "default",

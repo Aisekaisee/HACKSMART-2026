@@ -55,14 +55,7 @@ export default function LandingPage() {
             >
               Get Started Now
             </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="px-8 h-12 text-base border-primary/20 hover:bg-primary/5 text-foreground"
-              onClick={() => navigate("/login")}
-            >
-              View Documentation
-            </Button>
+            
           </div>
         </div>
 

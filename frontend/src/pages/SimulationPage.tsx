@@ -15,14 +15,15 @@ import {
   setScenariosLoading,
   clearScenarios,
 } from "@/features/scenariosSlice";
-import { resetUI } from "@/features/uiSlice";
+import { resetUI, startTutorial } from "@/features/uiSlice";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Info } from "lucide-react";
 import LeftSidebar from "@/components/simulation/LeftSidebar";
 import SimulationMap from "@/components/simulation/SimulationMap";
 import RightSidebar from "@/components/simulation/RightSidebar";
+import TutorialOverlay from "@/components/simulation/TutorialOverlay";
 
 export default function SimulationPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -34,6 +35,28 @@ export default function SimulationPage() {
   const { loading: stationsLoading } = useAppSelector(
     (state) => state.stations,
   );
+  const { tutorialActive } = useAppSelector((state) => state.ui);
+
+  // Keyboard listener for tutorial trigger (i key)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+      
+      // Press 'i' to start tutorial (only when not already active)
+      if (e.key.toLowerCase() === "i" && !tutorialActive) {
+        dispatch(startTutorial());
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [dispatch, tutorialActive]);
 
   useEffect(() => {
     if (!projectId) return;
@@ -134,6 +157,9 @@ export default function SimulationPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Tutorial Overlay */}
+      <TutorialOverlay />
+
       {/* Header */}
       <header className="h-14 border-b border-border bg-card flex items-center px-4 gap-4 shrink-0 shadow-sm z-50">
         <Button
@@ -146,9 +172,24 @@ export default function SimulationPage() {
           Back
         </Button>
         <div className="h-6 w-px bg-border" />
-        <h1 className="text-lg font-semibold text-foreground truncate">
+        <h1 className="text-lg font-semibold text-foreground truncate flex-1">
           {currentProject.name}
         </h1>
+
+        {/* Tutorial Trigger Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => dispatch(startTutorial())}
+          className="text-muted-foreground hover:text-foreground border-indigo-500/30 hover:border-indigo-500/60 hover:bg-indigo-500/10 gap-2"
+          title="Press 'i' to start tutorial"
+        >
+          <Info className="h-4 w-4" />
+          <span className="hidden sm:inline">Tutorial</span>
+          <kbd className="hidden md:inline-flex h-5 items-center gap-0.5 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+            i
+          </kbd>
+        </Button>
       </header>
 
       {/* Main Layout: Three Panels */}

@@ -22,6 +22,9 @@ interface UIState {
   isPickingLocation: boolean;
   pickingForModal: "addStation" | "editStation" | "eventLocation" | null;
   pickedLocation: PickedLocation | null;
+  // Tutorial state
+  tutorialActive: boolean;
+  tutorialStep: number;
 }
 
 const initialState: UIState = {
@@ -40,6 +43,9 @@ const initialState: UIState = {
   isPickingLocation: false,
   pickingForModal: null,
   pickedLocation: null,
+  // Tutorial initial state
+  tutorialActive: false,
+  tutorialStep: 0,
 };
 
 const uiSlice = createSlice({
@@ -115,6 +121,26 @@ const uiSlice = createSlice({
       state.pickedLocation = null;
       state.pickingForModal = null;
     },
+    // Tutorial actions
+    startTutorial: (state) => {
+      state.tutorialActive = true;
+      state.tutorialStep = 0;
+    },
+    nextTutorialStep: (state) => {
+      state.tutorialStep += 1;
+    },
+    prevTutorialStep: (state) => {
+      if (state.tutorialStep > 0) {
+        state.tutorialStep -= 1;
+      }
+    },
+    goToTutorialStep: (state, action: PayloadAction<number>) => {
+      state.tutorialStep = action.payload;
+    },
+    endTutorial: (state) => {
+      state.tutorialActive = false;
+      state.tutorialStep = 0;
+    },
     resetUI: (state) => {
       state.selectedStationId = null;
       state.currentTimelineFrame = 0;
@@ -122,6 +148,8 @@ const uiSlice = createSlice({
       state.isPickingLocation = false;
       state.pickingForModal = null;
       state.pickedLocation = null;
+      state.tutorialActive = false;
+      state.tutorialStep = 0;
     },
   },
 });
@@ -137,6 +165,11 @@ export const {
   setPickedLocation,
   cancelLocationPicking,
   clearPickedLocation,
+  startTutorial,
+  nextTutorialStep,
+  prevTutorialStep,
+  goToTutorialStep,
+  endTutorial,
   resetUI,
 } = uiSlice.actions;
 export default uiSlice.reducer;

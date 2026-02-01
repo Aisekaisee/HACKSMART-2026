@@ -183,12 +183,13 @@ export default function LeftSidebar() {
         <Tabs defaultValue="stations" className="h-full flex flex-col">
           <div className="px-4 pt-4">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="stations" className="flex items-center gap-2">
+              <TabsTrigger value="stations" className="flex items-center gap-2" data-tutorial="stations-tab">
                 <MapPin className="h-4 w-4" /> Stations
               </TabsTrigger>
               <TabsTrigger
                 value="interventions"
                 className="flex items-center gap-2"
+                data-tutorial="scenarios-tab"
               >
                 <Layers className="h-4 w-4" /> Scenarios
               </TabsTrigger>
@@ -454,7 +455,7 @@ export default function LeftSidebar() {
       </div>
 
       {/* Fixed Footer Actions */}
-      <div className="p-4 border-t border-border bg-card/80 backdrop-blur-md space-y-3">
+      <div className="p-4 border-t border-border bg-card/80 backdrop-blur-md space-y-3" data-tutorial="simulation-controls">
         {/* Baseline Status */}
         <div className="flex items-center justify-between text-xs px-1">
           <span className="text-muted-foreground">Baseline Status:</span>
