@@ -4,6 +4,7 @@ import { store } from "@/store";
 import { useAuth } from "@/hooks/useAuth";
 import { Toaster } from "@/components/ui/sonner";
 import { Loader2 } from "lucide-react";
+import { ThemeProvider } from "@/components/theme-provider";
 
 // Pages
 import LandingPage from "@/pages/LandingPage";
@@ -90,12 +91,12 @@ function AppRoutes() {
 export default function App() {
   return (
     <Provider store={store}>
-      <BrowserRouter>
-        <div className="dark">
+      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+        <BrowserRouter>
           <AppRoutes />
           <Toaster richColors position="top-right" />
-        </div>
-      </BrowserRouter>
+        </BrowserRouter>
+      </ThemeProvider>
     </Provider>
   );
 }

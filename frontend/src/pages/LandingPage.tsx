@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { ModeToggle } from "@/components/mode-toggle";
 import { Battery, Zap, BarChart3, Map } from "lucide-react";
 
 export default function LandingPage() {
@@ -12,13 +13,16 @@ export default function LandingPage() {
 
       {/* Header */}
       <header className="px-6 py-6 flex justify-between items-center relative z-10">
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <Battery className="h-6 w-6 text-primary" />
+        <div className="flex items-center gap-4">
+          <ModeToggle />
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Battery className="h-6 w-6 text-primary" />
+            </div>
+            <span className="text-xl font-bold text-foreground tracking-tight">
+              SwapSim
+            </span>
           </div>
-          <span className="text-xl font-bold text-foreground tracking-tight">
-            SwapSim
-          </span>
         </div>
         <Button
           variant="ghost"
@@ -55,7 +59,7 @@ export default function LandingPage() {
             >
               Get Started Now
             </Button>
-            
+
           </div>
         </div>
 
