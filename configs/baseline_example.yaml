@@ -1,126 +1,77 @@
-# BatterySmart Network Baseline Configuration
-# Represents a realistic battery swap network across Delhi NCR
-# 8 stations with balanced capacity to achieve moderate KPIs
+# BatterySmart Network Baseline Configuration (Demo)
+# 3 stations with deliberate coverage gaps — perfect for demoing expansion scenarios
+# Full 8-station config preserved at configs/baseline_full.yaml
 
 stations:
   # === HIGH TIER - Major Commercial Hubs ===
   - station_id: "WDL_01"
     tier: "high"
-    chargers: 12
-    inventory_capacity: 15
+    chargers: 10
+    inventory_capacity: 14
     lat: 28.6600
     lon: 77.2200
     initial_charged: 12
-    # Wazirpur Industrial Area - High delivery traffic
-  
+    # Wazirpur Industrial Area - North Delhi hub
+
   - station_id: "CNP_02"
     tier: "high"
-    chargers: 10
-    inventory_capacity: 14
-    lat: 28.5700
-    lon: 77.2000
-    initial_charged: 12
-    # Connaught Place - Central business district
-  
-  - station_id: "GGN_03"
-    tier: "high"
-    chargers: 10
-    inventory_capacity: 14
-    lat: 28.4595
-    lon: 77.0266
-    initial_charged: 12
-    # Gurgaon Cyber Hub - Tech park area
+    chargers: 8
+    inventory_capacity: 12
+    lat: 28.6289
+    lon: 77.2183
+    initial_charged: 10
+    # Connaught Place - Central Delhi CBD
 
-  # === MEDIUM TIER - Residential/Mixed Areas ===
-  - station_id: "RKP_04"
-    tier: "medium"
-    chargers: 8
-    inventory_capacity: 10
-    lat: 28.6300
-    lon: 77.2800
-    initial_charged: 8
-    # Rohini - Large residential area
-  
-  - station_id: "DWK_05"
-    tier: "medium"
-    chargers: 8
-    inventory_capacity: 10
-    lat: 28.5900
-    lon: 77.3100
-    initial_charged: 8
-    # Dwarka - Residential suburb
-  
   - station_id: "NOI_06"
     tier: "medium"
-    chargers: 6
+    chargers: 5
     inventory_capacity: 8
     lat: 28.5355
     lon: 77.3910
     initial_charged: 6
-    # Noida Sector 18 - Commercial + Residential
-
-  # === LOW TIER - Emerging Areas ===
-  - station_id: "FBD_07"
-    tier: "low"
-    chargers: 4
-    inventory_capacity: 6
-    lat: 28.4089
-    lon: 77.3178
-    initial_charged: 5
-    # Faridabad - Industrial area
-  
-  - station_id: "GZB_08"
-    tier: "low"
-    chargers: 4
-    inventory_capacity: 6
-    lat: 28.6692
-    lon: 77.4538
-    initial_charged: 5
-    # Ghaziabad - Growing market
+    # Noida Sector 18 - East Delhi / NCR
 
 demand:
-  # Realistic demand rates based on station tier
   base_rates:
-    high: 15.0    # 15 swaps/hour - manageable for 10-12 chargers
-    medium: 10.0  # 10 swaps/hour - balanced for 6-8 chargers
-    low: 5.0      # 5 swaps/hour - appropriate for 4 chargers
-  
-  # Delhi NCR typical traffic pattern
+    high: 15.0
+    medium: 10.0
+    low: 5.0
+
   time_multipliers:
-    0: 0.2    # 12 AM - Very low
-    1: 0.1    # 1 AM
-    2: 0.1    # 2 AM
-    3: 0.1    # 3 AM
-    4: 0.2    # 4 AM - Early morning prep
-    5: 0.4    # 5 AM - Drivers starting
-    6: 0.7    # 6 AM - Morning rush begins
-    7: 1.0    # 7 AM - Morning peak
-    8: 1.3    # 8 AM - Peak office rush
-    9: 1.4    # 9 AM - Peak continues
-    10: 1.2   # 10 AM - Slightly reduced
-    11: 1.1   # 11 AM
-    12: 1.0   # 12 PM - Lunch time dip
-    13: 0.9   # 1 PM
-    14: 0.9   # 2 PM - Afternoon lull
-    15: 1.0   # 3 PM - Picking up
-    16: 1.1   # 4 PM
-    17: 1.3   # 5 PM - Evening rush
-    18: 1.5   # 6 PM - Peak evening
-    19: 1.4   # 7 PM - Dinner delivery rush
-    20: 1.2   # 8 PM
-    21: 1.0   # 9 PM - Winding down
-    22: 0.6   # 10 PM
-    23: 0.4   # 11 PM
-  
+    0: 0.2
+    1: 0.1
+    2: 0.1
+    3: 0.1
+    4: 0.2
+    5: 0.4
+    6: 0.7
+    7: 1.0
+    8: 1.3
+    9: 1.4
+    10: 1.2
+    11: 1.1
+    12: 1.0
+    13: 0.9
+    14: 0.9
+    15: 1.0
+    16: 1.1
+    17: 1.3
+    18: 1.5
+    19: 1.4
+    20: 1.2
+    21: 1.0
+    22: 0.6
+    23: 0.4
+
   scenario_multiplier: 1.0
 
 operations:
-  swap_duration: 2.5          # minutes - realistic swap time
-  charge_duration: 75.0       # minutes - 1hr 15min charging
-  replenishment_threshold: 0.25   # 25% triggers replenishment
-  replenishment_amount: 8     # batteries per replenishment
-  replenishment_delay: 45.0   # minutes for logistics
-  max_wait_time: 12.0         # minutes - customers leave after 12 min
+  swap_duration: 2.5
+  charge_duration: 75.0
+  replenishment_threshold: 0.25
+  replenishment_amount: 8
+  replenishment_delay: 45.0
+  max_wait_time: 12.0
 
-simulation_duration: 1440.0   # 24 hours
+simulation_duration: 1440.0
 random_seed: 42
